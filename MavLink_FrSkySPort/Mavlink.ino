@@ -462,6 +462,7 @@ void _MavLink_receive() {
          */
         case MAVLINK_MSG_ID_VFR_HUD:
           ap_groundspeed = mavlink_msg_vfr_hud_get_groundspeed(&msg);      // 100 = 1m/s
+          ap_airspeed = mavlink_msg_vfr_hud_get_airspeed(&msg);            // 100 = 1m/s
           ap_heading = mavlink_msg_vfr_hud_get_heading(&msg);              // 100 = 100 deg
           ap_throttle = mavlink_msg_vfr_hud_get_throttle(&msg);            //  100 = 100%
           ap_bar_altitude = mavlink_msg_vfr_hud_get_alt(&msg) * 100;       //  m
