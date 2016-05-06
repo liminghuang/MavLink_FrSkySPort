@@ -43,7 +43,6 @@
 #include "Time.h"
 #include "FrSkySportSensor.h"
 #include "FrSkySportSensorFas.h"
-#include "FrSkySportSensorAss.h"
 #include "FrSkySportSensorFuel.h"
 #include "FrSkySportSensorFlvss.h"
 #include "FrSkySportSensorGps.h"
@@ -69,7 +68,6 @@ FrSkySportSensorFuel fuel;                             // Create FUEL sensor wit
     FrSkySportSensorFlvss flvss2(FrSkySportSensor::ID15);  // Create FLVSS sensor with given ID
   #endif
 #endif
-FrSkySportSensorAss ass;                               // Create ASS sensor with default ID
 FrSkySportSensorGps gps;                               // Create GPS sensor with default ID
 FrSkySportSensorRpm rpm;                               // Create RPM sensor with default ID
 FrSkySportSensorAcc acc;                               // Create ACC sensor with default ID
@@ -118,22 +116,22 @@ void FrSkySPort_Init()
   #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
     #if (MAXCELLS <= 6)
       #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
       #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
       #endif
     #else
       #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
       #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
       #endif
     #endif
   #else
     #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
-      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
     #else
-      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &gps, &sp2uart, &rpm, &vario, &fuel, &acc);
     #endif
   #endif
 }
@@ -159,12 +157,6 @@ void FrSkySPort_Process()
    * *****************************************************
    */
   FrSkySportTelemetry_FAS();
-/*
-   * *****************************************************
-   * *** Set airspeed sensor (ASS) data                ***
-   * *****************************************************
-   */
-  FrSkySportTelemetry_ASS();
 
   /*
    * *****************************************************
@@ -395,11 +387,25 @@ void FrSkySportTelemetry_FLVSS() {
  * *******************************************************
  */
 void FrSkySportTelemetry_GPS() {
+  if(ap_fixtype>=3)
+  {
+    /*
+    if(ap_longitude < 0)
+      longitude=((abs(ap_longitude)/100)*6);//  | 0xC0000000;
+    else
+      longitude=((abs(ap_longitude)/100)*6);//  | 0x80000000;
+
+      if(ap_latitude < 0 )
+      latitude=((abs(ap_latitude)/100)*6);// | 0x40000000;
+    else
+      latitude=((abs(ap_latitude)/100)*6);
+    */
     gps.setData(ap_latitude / 1E7, ap_longitude / 1E7,    // Latitude and longitude in degrees decimal (positive for N/E, negative for S/W)
-        ap_gps_altitude / 10.0,                     // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
-        ap_gps_speed * 10.0,                        // GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
-        ap_heading ,                                // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
-        ap_gps_hdop);                               // GPS HDOP horizontal dilution of position in cm (m*100)
+              ap_gps_altitude / 10.0,         // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
+              ap_gps_speed * 10.0,// / 100.0,            // GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
+              ap_heading ,                     // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+              ap_gps_hdop);                   // GPS HDOP horizontal dilution of position in cm (m*100)
+//              ap_cog,                         // Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
 
     #ifdef DEBUG_FrSkySportTelemetry_GPS
       if (millis() > GPS_debug_time) {
@@ -449,6 +455,7 @@ void FrSkySportTelemetry_GPS() {
         GPS_debug_time = millis() + 500;
       }
     #endif
+  }
 }
 
 /*
@@ -595,14 +602,7 @@ void FrSkySportTelemetry_FUEL() {
   }
 }
 
-/*
- * *****************************************************
- * *** Set Airspeed sensor data                      ***
- * *****************************************************
- */
-void FrSkySportTelemetry_ASS() {
-  ass.setData(ap_airspeed);
-}
+
 /*
  * *****************************************************
  * *** Helper function "queue buffer" to queue       ***
