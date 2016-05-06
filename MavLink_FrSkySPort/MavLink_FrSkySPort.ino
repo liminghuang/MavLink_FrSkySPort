@@ -150,6 +150,7 @@
 //#define DEBUG_APM_RAW_IMU                   // MSG #27  - not used -> use: DEBUG_APM_ACC
 //#define DEBUG_APM_ACC                       // Debug Accelerometer
 //#define DEBUG_APM_ATTITUDE                  // MSG #30
+//#define DEBUG_APM_GLOBAL_POSITION_INT       // MSG #33
 //#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63  - planned - currently not implemented - not supported by APM
 //#define DEBUG_APM_RC_CHANNELS               // MSG #65
 //#define DEBUG_APM_VFR_HUD                   // MSG #74
@@ -245,6 +246,14 @@ uint32_t    ap_yaw_angle          = 0;      // Yaw angle (rad)
 uint32_t    ap_roll_speed         = 0;      // Roll angular speed (rad/s)
 uint32_t    ap_pitch_speed        = 0;      // Pitch angular speed (rad/s)
 uint32_t    ap_yaw_speed          = 0;      // Yaw angular speed (rad/s)
+
+/*
+ * *******************************************************
+ * *** Message #33  GLOBAL_POSITION_INT                ***
+ * *** Needed for relative altitude                    ***
+ * *******************************************************
+ */
+int32_t      ap_relative_alt      = 0;      // Relative Altitude (cm)
 
 /*
  * *******************************************************

@@ -374,6 +374,20 @@ void _MavLink_receive() {
           break;
         /*
          * *****************************************************
+         * *** MAVLINK Message #33 - GLOBAL_POSITION_INT     ***
+         * *****************************************************
+         */
+        case MAVLINK_MSG_ID_GLOBAL_POSITION_INT:   // 33
+          ap_relative_alt = mavlink_msg_global_position_int_get_relative_alt(&msg)*0.1;
+          #ifdef DEBUG_APM_GLOBAL_POSITION_INT
+            debugSerial.print(millis());
+            debugSerial.print("\tMAVLINK_MSG_ID_GLOBAL_POSITION_INT: relative_altitude: ");
+            debugSerial.print(ap_relative_alt);
+            debugSerial.println();
+          #endif
+          break;
+        /*
+         * *****************************************************
          * *** MAVLINK Message #63 - GLOBAL_POSITION_INT_COV ***
          * *****************************************************
          */

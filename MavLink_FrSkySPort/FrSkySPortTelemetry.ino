@@ -545,14 +545,17 @@ void FrSkySportTelemetry_A3A4() {
 void FrSkySportTelemetry_VARIO() {
   #ifdef DEBUG_FrSkySportTelemetry_VARIO
     debugSerial.print(millis());
-    debugSerial.print("\tCurrent altitude: ");
-    debugSerial.print(ap_bar_altitude / 100.0);
+//    debugSerial.print("\tCurrent altitude: ");
+//    debugSerial.print(ap_bar_altitude / 100.0);
+    debugSerial.print("\tCurrent home altitude: ");
+    debugSerial.print(ap_relative_alt / 100.0);
     debugSerial.print("m\tCurrent climb rate in meters/second: ");
     debugSerial.print(ap_climb_rate);
     debugSerial.print("m/s");
     debugSerial.println();
   #endif
-  vario.setData(ap_bar_altitude,  // Current altitude (MSL), in meters
+    //vario.setData(ap_bar_altitude,  // Current altitude (MSL), in meters
+    vario.setData(ap_relative_alt,    // Current home location altitude, in centimeters
                 ap_climb_rate);   // Current climb rate in meters/second
 }
 
