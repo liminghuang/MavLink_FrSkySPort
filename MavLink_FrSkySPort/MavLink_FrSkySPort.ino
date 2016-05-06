@@ -270,7 +270,7 @@ uint16_t    ap_chan_raw[18]       = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // R
  * *** Message #74  VFR_HUD                            ***
  * *******************************************************
  */
-//int32_t     ap_airspeed           = 0;    // Current airspeed in m/s
+int32_t     ap_airspeed           = 0;    // Current airspeed in m/s
 uint32_t    ap_groundspeed        = 0;    // Current ground speed in m/s
 uint32_t    ap_heading            = 0;    // Current heading in degrees, in compass units (0..360, 0=north)
 uint16_t    ap_throttle           = 0;    // Current throttle setting in integer percent, 0 to 100

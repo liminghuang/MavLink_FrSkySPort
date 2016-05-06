@@ -161,8 +161,8 @@
 		if whconsumed >= maxconsume then
 			whconsumed = maxconsume
 		end
-		lcd.drawFilledRectangle(74,9,11,55,INVERS)
-		lcd.drawFilledRectangle(75,9,9, (whconsumed - 0)* ( 55 - 0 ) / (maxconsume - 0) + 0, 0)
+		lcd.drawFilledRectangle(76,9,8,55,INVERS)
+		lcd.drawFilledRectangle(77,9,7, (whconsumed - 0)* ( 55 - 0 ) / (maxconsume - 0) + 0, 0)
 	end
 
 --Aux Display functions and panels
@@ -248,34 +248,37 @@
 	local function htsapanel()
 		lcd.drawLine (htsapaneloffset + 154, 8, htsapaneloffset + 154, 63, SOLID, 0)
 		--heading
-		lcd.drawText(htsapaneloffset + 76,11,"Heading ",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos(),9,getValue("Hdg"),MIDSIZE+LEFT)
+		lcd.drawText(htsapaneloffset + 76,11,"Hdg",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos()+4,9,getValue("Hdg"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),9,"\64",MIDSIZE)
 		--altitude
 		--Alt max
-		lcd.drawText(htsapaneloffset + 76,25,"Alt ",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+3,22,getValue("Alt"),MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),22,"m",MIDSIZE)
+		lcd.drawText(htsapaneloffset + 76,24,"Alt ",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos()+3,21,getValue("Alt"),MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),21,"m",MIDSIZE)
 		--vspeed
 		vspd= getValue("VSpd")
 		if vspd == 0 then
-			lcd.drawText(lcd.getLastPos(), 25,"==",0)
+			lcd.drawText(lcd.getLastPos(), 24,"==",0)
 		elseif vspd >0 then
-			lcd.drawText(lcd.getLastPos(), 25,"++",0)
+			lcd.drawText(lcd.getLastPos(), 24,"++",0)
 		elseif vspd <0 then
-			lcd.drawText(lcd.getLastPos(), 25,"-",0)
+			lcd.drawText(lcd.getLastPos(), 24,"-",0)
 		end
-		lcd.drawNumber(lcd.getLastPos(),25,vspd,0+LEFT)
-		lcd.drawText(htsapaneloffset + 76,35,"Max",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+8,35,getValue("AltM"),SMLSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),35,"m",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos(),24	,vspd,0+LEFT)
+		lcd.drawText(htsapaneloffset + 76,34,"Max",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos()+8,34,getValue("AltM"),SMLSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),34,"m",SMLSIZE)
 		--Armed time
-		lcd.drawTimer(htsapaneloffset + 83,42,model.getTimer(0).value,MIDSIZE)
+		lcd.drawText(htsapaneloffset + 76,44,"ArmT",SMLSIZE)
+		lcd.drawTimer(lcd.getLastPos()+2,41,model.getTimer(0).value,MIDSIZE)
 		--Model Runtime
-		lcd.drawNumber(lcd.getLastPos()+8,45,model.getTimer(1).value/360,SMLSIZE+LEFT+PREC1)
-		lcd.drawText(lcd.getLastPos()+3,45,"h",SMLSIZE)
-		lcd.drawText(htsapaneloffset + 76,56,"Speed",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+8, 53,getValue("GSpd")*3.6,MIDSIZE+LEFT)
+		lcd.drawNumber(lcd.getLastPos()+2,44,model.getTimer(1).value/360,SMLSIZE+LEFT+PREC1)
+		lcd.drawText(lcd.getLastPos()+3,44,"h",SMLSIZE)
+		lcd.drawText(htsapaneloffset + 76,55,"GSpd",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos()+4,52,getValue("GSpd")*3.6,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos()+1,55,"ASpd",SMLSIZE)
+		lcd.drawNumber(lcd.getLastPos()+4,52,getValue("ASpd")*3.6,MIDSIZE+LEFT)
 	end
 
 -- Top Panel
@@ -286,40 +289,39 @@
 		else
 			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
 		end
-		lcd.drawText(134, 0, "TX:", INVERS)
-		lcd.drawNumber(160, 0, getValue(189)*10,0+PREC1+INVERS)
+		lcd.drawText(106, 0, "TxBat:", INVERS)
+		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
 		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS)
-		lcd.drawText(172, 0, "rssi:", INVERS)
-		lcd.drawNumber(lcd.getLastPos()+10, 0, getValue("RSSI"),0+INVERS)
+		lcd.drawText(lcd.getLastPos()+4, 0, "rssi:", INVERS)
+		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
 	end
 
 --Power Panel
 	local function powerpanel()
 		consumption=getValue("mAh")---
 
-		lcd.drawNumber(30,13,getValue("VFAS")*10,DBLSIZE+PREC1)
-		lcd.drawText(lcd.getLastPos(),14,"V",0)
+		lcd.drawNumber(4,9,getValue("VFAS")*10,MIDSIZE+PREC1+LEFT)
+		lcd.drawText(lcd.getLastPos(),13,"V",0)
 
-		lcd.drawNumber(67,9,getValue("Curr")*10,MIDSIZE+PREC1)
-		lcd.drawText(lcd.getLastPos(),10,"A",0)
-
-		lcd.drawNumber(67,21,getValue("Watt"),MIDSIZE)
-		lcd.drawText(lcd.getLastPos(),22,"W",0)
-
-		lcd.drawNumber(1,33,consumption + ( consumption * ( model.getGlobalVariable(8, 0)/100 ) ),MIDSIZE+LEFT)
+		lcd.drawNumber(lcd.getLastPos()+8,9,getValue("Cmin")*100,MIDSIZE+PREC2+LEFT)
 		xposCons=lcd.getLastPos()
-		lcd.drawText(xposCons,32,"m",SMLSIZE)
-		lcd.drawText(xposCons,38,"Ah",SMLSIZE)
+		lcd.drawText(xposCons,9,"c-",SMLSIZE)
+		lcd.drawText(xposCons,15,"min",SMLSIZE)
+		
+		lcd.drawNumber(4,23,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
+		lcd.drawText(lcd.getLastPos(),27,"A",0)
 
-		lcd.drawNumber(67,33,( watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) )*10,MIDSIZE+PREC1)
+		lcd.drawNumber(lcd.getLastPos()+2,23,consumption + ( consumption * ( model.getGlobalVariable(8, 0)/100 ) ),MIDSIZE+LEFT)
 		xposCons=lcd.getLastPos()
-		lcd.drawText(xposCons,32,"w",SMLSIZE)
-		lcd.drawText(xposCons,38,"h",SMLSIZE)
+		lcd.drawText(xposCons,23,"m",SMLSIZE)
+		lcd.drawText(xposCons,28,"Ah",SMLSIZE)
 
-		lcd.drawNumber(42,47,getValue("Cmin")*100,DBLSIZE+PREC2)
-		xposCons=lcd.getLastPos()
-		lcd.drawText(xposCons,48,"V",SMLSIZE)
-		lcd.drawText(xposCons,56,"C-min",SMLSIZE)
+		lcd.drawNumber(1,37,getValue("Watt"),MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),41,"W",0)
+
+		lcd.drawNumber(lcd.getLastPos()+2,42,( watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) )*10,SMLSIZE+PREC1+LEFT)
+		lcd.drawText(lcd.getLastPos(),42,"Wh",SMLSIZE)
+
 	end
 
 -- Calculate watthours
