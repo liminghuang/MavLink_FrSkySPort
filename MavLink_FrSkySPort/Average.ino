@@ -61,7 +61,7 @@ uint32_t voltageSum = 0;
 uint16_t voltageCount = 0;
 uint16_t voltageMinimum = 0;
 
-// Don't respond to FAS/FLVSS request until it looks like the voltage received through mavlink as stabilized.
+// Don't respond to FCS/FLVSS request until it looks like the voltage received through mavlink as stabilized.
 // This is a try to eliminate most of the low voltage alarms recevied upon model power up.
 boolean voltageStabilized = false;
 uint16_t voltageLast = 0;

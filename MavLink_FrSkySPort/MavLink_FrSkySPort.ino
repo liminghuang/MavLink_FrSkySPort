@@ -85,7 +85,7 @@
  * Speed           ( Ground speed from GPS,  [km/h] )
  * T1              ( GPS status = ap_sat_visible*10) + ap_fixtype )
  * T2              ( Armed Status and Mavlink Messages :- 16 bit value: bit 1: armed - bit 2-5: severity +1 (0 means no message - bit 6-15: number representing a specific text)
- * Vfas            ( same as Cells )
+ * Vfcs            ( same as Cells )
  * Longitud        ( Longitud )
  * Latitud         ( Latitud )
  * Dist            ( Will be calculated by FrSky Taranis as the distance from first received lat/long = Home Position )
@@ -128,13 +128,13 @@
  * *** Enable Addons:                                  ***
  * *******************************************************
  */
-//#define USE_FAS_SENSOR_INSTEAD_OF_APM_DATA              // Enable  if you use a FrSky FAS   Sensor.
-//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable  if you want send fake cell info calculated from VFAS, please set MAXCELLs according your Number of LiPo Cells
+//#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
+//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable if you want send fake cell info calculated from VFCS, please set MAXCELLs according your Number of LiPo Cells
 //#define USE_SINGLE_CELL_MONITOR                         // Disable if you use a FrSky FLVSS Sensor. - Setup in LSCM Tab
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-
+//#define POLLING_ENABLED                                 // Enable Sensor Polling - for when teensy not connected to X series Rx (say connected to Taranis S.Port input directly)
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -162,7 +162,7 @@
 
 // *** DEBUG FrSkySPort Telemetry:
 //#define DEBUG_FrSkySportTelemetry
-//#define DEBUG_FrSkySportTelemetry_FAS
+//#define DEBUG_FrSkySportTelemetry_FCS
 //#define DEBUG_FrSkySportTelemetry_FLVSS
 //#define DEBUG_FrSkySportTelemetry_GPS
 //#define DEBUG_FrSkySportTelemetry_RPM
