@@ -82,7 +82,8 @@
  * hdg             ( Compass heading  [deg] )
  * Rpm             ( Throttle when ARMED [%] *100 + % battery remaining as reported by Mavlink)
  * VSpd            ( Vertical speed [m/s] )
- * Speed           ( Ground speed from GPS,  [km/h] )
+ * GSpd            ( Ground speed from GPS,  [km/h] )
+ * ASpd            ( Air Speed from Airspeed Sensor [km/h])
  * T1              ( GPS status = ap_sat_visible*10) + ap_fixtype )
  * T2              ( Armed Status and Mavlink Messages :- 16 bit value: bit 1: armed - bit 2-5: severity +1 (0 means no message - bit 6-15: number representing a specific text)
  * Vfcs            ( same as Cells )
@@ -101,7 +102,6 @@
  * *******************************************************
  */
 #include "GCS_MAVLink.h"
-//#include "mavlink.h"
 #include "LSCM.h"
 /*
  * *******************************************************
@@ -144,17 +144,15 @@
 //#define DEBUG_APM_MAVLINK_MSGS              // Show all messages received from APM
 //#define DEBUG_APM_CONNECTION
 //#define DEBUG_APM_HEARTBEAT                 // MSG #0
-//#define DEBUG_APM_SYS_STATUS                // MSG #1   - not used -> use: DEBUG_APM_BAT
 //#define DEBUG_APM_BAT                       // Debug Voltage and Current received from APM
 //#define DEBUG_APM_GPS_RAW                   // MSG #24
-//#define DEBUG_APM_RAW_IMU                   // MSG #27  - not used -> use: DEBUG_APM_ACC
 //#define DEBUG_APM_ACC                       // Debug Accelerometer
 //#define DEBUG_APM_ATTITUDE                  // MSG #30
 //#define DEBUG_APM_GLOBAL_POSITION_INT       // MSG #33
-//#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63  - planned - currently not implemented - not supported by APM
+//#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63 - not supported by APM
 //#define DEBUG_APM_RC_CHANNELS               // MSG #65
 //#define DEBUG_APM_VFR_HUD                   // MSG #74
-//#define DEBUG_APM_STATUSTEXT                // MSG #254 -
+//#define DEBUG_APM_STATUSTEXT                // MSG #254
 //#define DEBUG_APM_PARSE_STATUSTEXT
 //#define DEBUG_GIMBAL_HEARTBEAT
 //#define DEBUG_OTHER_HEARTBEAT

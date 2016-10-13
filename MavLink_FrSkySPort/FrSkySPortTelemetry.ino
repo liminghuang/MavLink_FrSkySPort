@@ -245,14 +245,14 @@ void FrSkySportTelemetry_FCS() {
         debugSerial.print(millis());
         debugSerial.println("FrSkySportTelemetry_FCS:");
         debugSerial.print("\tVFCS (0x0210): ");
-        debugSerial.print(FCSVoltage / 10.0 );
+        debugSerial.print(FCSVoltage / 1000.0 );
         debugSerial.print("\tCurr (0x0200): ");
         //debugSerial.print(FCSCurrent);
         debugSerial.print(ap_current_battery / 10.0);
         debugSerial.println();
       #endif
       fcs.setData(ap_current_battery / 10.0,    // Current consumption in amps
-                  FCSVoltage / 10.0);           // Battery voltage in volts
+                  FCSVoltage / 1000.0);           // Battery voltage in volts
     }
   #endif
 }
@@ -553,13 +553,13 @@ void FrSkySportTelemetry_VARIO() {
     debugSerial.print("\tCurrent home altitude: ");
     debugSerial.print(ap_relative_alt / 100.0);
     debugSerial.print("m\tCurrent climb rate in meters/second: ");
-    debugSerial.print(ap_climb_rate);
+    debugSerial.print(ap_climb_rate /100.0);
     debugSerial.print("m/s");
     debugSerial.println();
   #endif
     //vario.setData(ap_bar_altitude,  // Current altitude (MSL), in meters
-    vario.setData(ap_relative_alt,    // Current home location altitude, in centimeters
-                ap_climb_rate);   // Current climb rate in meters/second
+    vario.setData(ap_relative_alt /100,    // Current home location altitude, in centimeters
+                ap_climb_rate /100.0);   // Current climb rate in meters/second
 }
 
 /*

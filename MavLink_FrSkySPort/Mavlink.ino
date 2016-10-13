@@ -426,6 +426,7 @@ void _MavLink_receive() {
           ap_chan_raw[16] = mavlink_msg_rc_channels_get_chan16_raw(&msg);
           ap_chan_raw[17] = mavlink_msg_rc_channels_get_chan17_raw(&msg);
           ap_chan_raw[18] = mavlink_msg_rc_channels_get_chan18_raw(&msg);
+          ap_rssi = mavlink_msg_rc_channels_get_rssi(&msg);
 
           #ifdef DEBUG_APM_RC_CHANNELS
           if (millis() > RC_DEBUG_TIMEOUT) {
@@ -464,6 +465,9 @@ void _MavLink_receive() {
               debugSerial.print(ap_chan_raw[i]);
               debugSerial.print(", ");
             }
+            debugSerial.println();
+            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_rssi: ");
+            debugSerial.print(ap_chan_rssi);
             debugSerial.println();
           }
           #endif
