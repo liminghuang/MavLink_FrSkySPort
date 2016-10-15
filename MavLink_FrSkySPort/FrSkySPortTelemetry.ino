@@ -248,10 +248,10 @@ void FrSkySportTelemetry_FCS() {
         debugSerial.print(FCSVoltage / 1000.0 );
         debugSerial.print("\tCurr (0x0200): ");
         //debugSerial.print(FCSCurrent);
-        debugSerial.print(ap_current_battery / 10.0);
+        debugSerial.print(ap_current_battery / 100.0);
         debugSerial.println();
       #endif
-      fcs.setData(ap_current_battery / 10.0,    // Current consumption in amps
+      fcs.setData(ap_current_battery / 100.0,    // Current consumption in amps
                   FCSVoltage / 1000.0);           // Battery voltage in volts
     }
   #endif
