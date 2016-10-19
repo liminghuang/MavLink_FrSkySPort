@@ -289,11 +289,17 @@
 		else
 			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
 		end
-		lcd.drawText(106, 0, "TxBat:", INVERS)
+		lcd.drawText(90, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
 		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS)
-		lcd.drawText(lcd.getLastPos()+4, 0, "rssi:", INVERS)
-		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		if getValue("A4")==0 then
+		  lcd.drawText(lcd.getLastPos()+4, 0, "mav-", INVERS+SMLSIZE)
+		  lcd.drawText(lcd.getLastPos(), 0, "rssi:", INVERS)
+		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("A3"),0+INVERS+LEFT)
+		else
+		  lcd.drawText(lcd.getLastPos()+4, 0, "rssi:", INVERS)
+		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		end  
 	end
 
 --Power Panel

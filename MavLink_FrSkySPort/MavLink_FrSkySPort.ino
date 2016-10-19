@@ -111,7 +111,7 @@
 #define debugSerial         Serial
 #define debugSerialBaud     57600
 #define _MavLinkSerial      Serial2
-#define _MavLinkSerialBaud  57600
+#define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk, or 115200 if connected to ULRS Tx UART
 #define START               1
 #define MSG_RATE            10      // Hertz
 #define AP_SYSID            1       // autopilot system id
@@ -134,7 +134,8 @@
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-//#define POLLING_ENABLED                                 // Enable Sensor Polling - for when teensy not connected to X series Rx (say connected to Taranis S.Port input directly)
+//#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
+//#define USE_MAV_RSSI                                        // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -181,7 +182,7 @@
  */
 // configure number maximum connected analog inputs(cells)
 // if you build an six cell network then MAXCELLS is 6
-#define MAXCELLS 3
+#define MAXCELLS 4
 
 /*
  * *******************************************************
@@ -263,7 +264,12 @@ time_t      ap_gps_time_unix_utc  = 0;      // Timestamp (microseconds since UNI
                                             // 0 for unknown.
                                             // Commonly filled by the precision time source of a GPS receiver.
 
-// Message #65 RC_CHANNELS
+/*
+ * *******************************************************
+ * *** Message #65  RC_CHANNELS                        ***
+ * *** Needed for Mavlink RSSI                         ***
+ * *******************************************************
+ */
 #ifdef USE_RC_CHANNELS
 uint8_t     ap_chancount          = 0;      // Total number of RC channels being received.
                                             // This can be larger than 18, indicating that more channels are available but
@@ -271,6 +277,11 @@ uint8_t     ap_chancount          = 0;      // Total number of RC channels being
 uint16_t    ap_chan_raw[18]       = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // RC channel x input value, in microseconds.
                                                                             // A value of UINT16_MAX (65535U) implies the channel is unused.
 #endif
+
+#ifdef USE_MAV_RSSI
+uint8_t    ap_rssi               = 0;
+#endif
+
 
 /*
  * *******************************************************

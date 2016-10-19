@@ -526,17 +526,27 @@ void FrSkySportTelemetry_RPM() {
  * *****************************************************
  */
 void FrSkySportTelemetry_A3A4() {
-  #ifdef DEBUG_FrSkySportTelemetry_A3A4
-    debugSerial.print(millis());
-    debugSerial.print("\tRoll Angle (A3): ");
-    debugSerial.print(handle_A2_A3_value((ap_roll_angle+180)/scalefactor));
-    debugSerial.print("\tPitch Angle (A4): ");
-    debugSerial.print(handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));
-    debugSerial.println();
-  #endif
-  sp2uart.setData(handle_A2_A3_value((ap_roll_angle+180)/scalefactor),     // Roll Angle
+  #ifdef USE_MAV_RSSI    //we will assume we require Mavlink RSSI output on A3 as likely using with ULRS
+    #ifdef DEBUG_FrSkySportTelemetry_A3A4
+      debugSerial.print(millis());
+      debugSerial.print("\tRSSI (A3): ");
+      debugSerial.print(ap_rssi / 2.55);
+      debugSerial.println();
+    #endif
+    sp2uart.setData(ap_rssi / 2.55,   // Mavlink RSSI
+                    0);          // Assign zero to A4 - used in LUA to replace regular RSSI with RSSI on A3
+  #else                    //if no polling then we will output roll/pitch on A3/A4
+    #ifdef DEBUG_FrSkySportTelemetry_A3A4
+      debugSerial.print(millis());
+      debugSerial.print("\tRoll Angle (A3): ");
+      debugSerial.print(handle_A2_A3_value((ap_roll_angle+180)/scalefactor));
+      debugSerial.print("\tPitch Angle (A4): ");
+      debugSerial.print(handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));
+      debugSerial.println();
+    #endif
+    sp2uart.setData(handle_A2_A3_value((ap_roll_angle+180)/scalefactor),     // Roll Angle
                   handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));   // Pitch Angle
-
+  #endif
 }
 
 /*
