@@ -42,6 +42,7 @@
 	local consumption = 0
 	local vspd = 0
 	local xposCons = 0
+	local dispTxt = ""
 	local t2 = 0
 	local prearmheading = 0
 	local radarx = 0
@@ -282,18 +283,24 @@
 	end
 
 -- Top Panel
-	local function toppanel()
+	local function toppanel() 
 		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 		if apmarmed==1 then
 			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS)
 		else
 			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
 		end
-		lcd.drawText(106, 0, "TxBat:", INVERS)
+		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
-		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS)
-		lcd.drawText(lcd.getLastPos()+4, 0, "rssi:", INVERS)
-		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS+SMLSIZE)
+		if getValue("A4")==0 then
+			dispTxt="rx-rssi:" .. tostring(getValue("A3"))
+      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		else
+			dispTxt="rssi:" .. tostring(getValue("RSSI"))
+      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		end  
 	end
 
 --Power Panel

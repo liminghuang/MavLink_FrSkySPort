@@ -37,12 +37,12 @@
 
 /*
  * *******************************************************
- * *** Inclueds needed for FrSkySPortTelemetry         ***
+ * *** Includes needed for FrSkySPortTelemetry         ***
  * *******************************************************
  */
 #include "Time.h"
 #include "FrSkySportSensor.h"
-#include "FrSkySportSensorFas.h"
+#include "FrSkySportSensorFcs.h"
 #include "FrSkySportSensorAss.h"
 #include "FrSkySportSensorFuel.h"
 #include "FrSkySportSensorFlvss.h"
@@ -59,8 +59,8 @@
  * *** Define FrSkySPortTelemetry Sensors:             ***
  * *******************************************************
  */
-#ifndef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
-  FrSkySportSensorFas fas;                               // Create FAS sensor with default ID
+#ifndef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
+  FrSkySportSensorFcs fcs;                               // Create FCS sensor with default ID
 #endif
 FrSkySportSensorFuel fuel;                             // Create FUEL sensor with default ID
 #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
@@ -75,8 +75,11 @@ FrSkySportSensorRpm rpm;                               // Create RPM sensor with
 FrSkySportSensorAcc acc;                               // Create ACC sensor with default ID
 FrSkySportSensorSp2uart sp2uart;                       // Create SP2UART Type B sensor with default ID
 FrSkySportSensorVario vario;                           // Create Variometer sensor with default ID
-FrSkySportTelemetry telemetry;                         // Create Variometer telemetry object
-
+#ifdef POLLING_ENABLED
+  FrSkySportTelemetry telemetry(true);                 // Initialise class (with polling)
+#else
+  FrSkySportTelemetry telemetry;                       // Initialise class (no polling)
+#endif
 
 /*
  * *******************************************************
@@ -84,17 +87,17 @@ FrSkySportTelemetry telemetry;                         // Create Variometer tele
  * *******************************************************
  */
 
-// Status message rigbuffer vars
+// Status message ringbuffer vars
 const int8_t statusRingsize = 30;
 int32_t statusRingHead = 0;
 int32_t statusRingTail = 0;
 int32_t statusRing[statusRingsize];
 uint32_t my_dequeue_status_value = 0;
 
-float FASCurrent = 0.0;
-float FASVoltage = 0.0;
+float FCSCurrent = 0.0;
+float FCSVoltage = 0.0;
 
-unsigned long FAS_timer = 0;
+unsigned long FCS_timer = 0;
 int8_t transmit = 0;
 
 // Scale factor for roll/pitch:
@@ -117,23 +120,23 @@ void FrSkySPort_Init()
   // Configure the telemetry serial port and sensors (remember to use & to specify a pointer to sensor)
   #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
     #if (MAXCELLS <= 6)
-      #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
+      #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
         telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
       #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
       #endif
     #else
-      #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
+      #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
         telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
       #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
       #endif
     #endif
   #else
-    #ifdef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
+    #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
       telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
     #else
-      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fas, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
     #endif
   #endif
 }
@@ -155,10 +158,10 @@ void FrSkySPort_Process()
   telemetry.send();
   /*
    * *****************************************************
-   * *** Set current/voltage sensor (FAS) data         ***
+   * *** Set current/voltage sensor (FCS) data         ***
    * *****************************************************
    */
-  FrSkySportTelemetry_FAS();
+  FrSkySportTelemetry_FCS();
 /*
    * *****************************************************
    * *** Set airspeed sensor (ASS) data                ***
@@ -168,7 +171,7 @@ void FrSkySPort_Process()
 
   /*
    * *****************************************************
-   * *** Set current/voltage sensor (FAS) data         ***
+   * *** Set current/voltage sensor (FCS) data         ***
    * *****************************************************
    */
   FrSkySportTelemetry_FLVSS();
@@ -228,35 +231,35 @@ void FrSkySPort_Process()
 
 /*
  * *******************************************************
- * *** Set current/voltage sensor (FAS) data           ***
+ * *** Set current/voltage sensor (FCS) data           ***
  * *******************************************************
- * set Voltage source to FAS in menu to use this data for battery voltage,
- * set Current source to FAS in menu to use this data for current readings
+ * set Voltage source to FCS in menu to use this data for battery voltage,
+ * set Current source to FCS in menu to use this data for current readings
  */
-void FrSkySportTelemetry_FAS() {
-  #ifndef USE_FAS_SENSOR_INSTEAD_OF_APM_DATA
-    FASVoltage = readAndResetAverageVoltage();
-    if ( FASVoltage > 0 ) {                                 // only progress if we have a Battery Voltage
-      //FASCurrent = readAndResetAverageCurrent();            // read Average Current
-      #ifdef DEBUG_FrSkySportTelemetry_FAS
+void FrSkySportTelemetry_FCS() {
+  #ifndef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
+    FCSVoltage = readAndResetAverageVoltage();
+    if ( FCSVoltage > 0 ) {                                 // only progress if we have a Battery Voltage
+      //FCSCurrent = readAndResetAverageCurrent();            // read Average Current
+      #ifdef DEBUG_FrSkySportTelemetry_FCS
         debugSerial.print(millis());
-        debugSerial.println("FrSkySportTelemetry_FAS:");
-        debugSerial.print("\tVFAS (0x0210): ");
-        debugSerial.print(FASVoltage / 10.0 );
+        debugSerial.println("FrSkySportTelemetry_FCS:");
+        debugSerial.print("\tVFCS (0x0210): ");
+        debugSerial.print(FCSVoltage / 1000.0 );
         debugSerial.print("\tCurr (0x0200): ");
-        //debugSerial.print(FASCurrent);
-        debugSerial.print(ap_current_battery / 10.0);
+        //debugSerial.print(FCSCurrent);
+        debugSerial.print(ap_current_battery / 100.0);
         debugSerial.println();
       #endif
-      fas.setData(ap_current_battery / 10.0,    // Current consumption in amps
-                  FASVoltage / 10.0);           // Battery voltage in volts
+      fcs.setData(ap_current_battery / 100.0,    // Current consumption in amps
+                  FCSVoltage / 1000.0);           // Battery voltage in volts
     }
   #endif
 }
 
 /*
  * *******************************************************
- * *** Set current/voltage sensor (FAS) data           ***
+ * *** Set current/voltage sensor (FCS) data           ***
  * *******************************************************
  * set LiPo voltage sensor (FLVSS) data (we use two sensors to simulate 8S battery)
  * set Voltage source to Cells in menu to use this data for battery voltage
@@ -523,17 +526,27 @@ void FrSkySportTelemetry_RPM() {
  * *****************************************************
  */
 void FrSkySportTelemetry_A3A4() {
-  #ifdef DEBUG_FrSkySportTelemetry_A3A4
-    debugSerial.print(millis());
-    debugSerial.print("\tRoll Angle (A3): ");
-    debugSerial.print(handle_A2_A3_value((ap_roll_angle+180)/scalefactor));
-    debugSerial.print("\tPitch Angle (A4): ");
-    debugSerial.print(handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));
-    debugSerial.println();
-  #endif
-  sp2uart.setData(handle_A2_A3_value((ap_roll_angle+180)/scalefactor),     // Roll Angle
+  #ifdef USE_MAV_RSSI    //we will assume we require Mavlink RSSI output on A3 as likely using with ULRS
+    #ifdef DEBUG_FrSkySportTelemetry_A3A4
+      debugSerial.print(millis());
+      debugSerial.print("\tRSSI (A3): ");
+      debugSerial.print(ap_rssi / 2.55);
+      debugSerial.println();
+    #endif
+    sp2uart.setData(ap_rssi / 2.55,   // Mavlink RSSI
+                    0);          // Assign zero to A4 - used in LUA to replace regular RSSI with RSSI on A3
+  #else                    //if no polling then we will output roll/pitch on A3/A4
+    #ifdef DEBUG_FrSkySportTelemetry_A3A4
+      debugSerial.print(millis());
+      debugSerial.print("\tRoll Angle (A3): ");
+      debugSerial.print(handle_A2_A3_value((ap_roll_angle+180)/scalefactor));
+      debugSerial.print("\tPitch Angle (A4): ");
+      debugSerial.print(handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));
+      debugSerial.println();
+    #endif
+    sp2uart.setData(handle_A2_A3_value((ap_roll_angle+180)/scalefactor),     // Roll Angle
                   handle_A2_A3_value((ap_pitch_angle+180)/scalefactor));   // Pitch Angle
-
+  #endif
 }
 
 /*
@@ -550,13 +563,13 @@ void FrSkySportTelemetry_VARIO() {
     debugSerial.print("\tCurrent home altitude: ");
     debugSerial.print(ap_relative_alt / 100.0);
     debugSerial.print("m\tCurrent climb rate in meters/second: ");
-    debugSerial.print(ap_climb_rate);
+    debugSerial.print(ap_climb_rate /100.0);
     debugSerial.print("m/s");
     debugSerial.println();
   #endif
     //vario.setData(ap_bar_altitude,  // Current altitude (MSL), in meters
-    vario.setData(ap_relative_alt,    // Current home location altitude, in centimeters
-                ap_climb_rate);   // Current climb rate in meters/second
+    vario.setData(ap_relative_alt /100,    // Current home location altitude, in centimeters
+                ap_climb_rate /100.0);   // Current climb rate in meters/second
 }
 
 /*

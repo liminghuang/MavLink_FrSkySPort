@@ -82,10 +82,11 @@
  * hdg             ( Compass heading  [deg] )
  * Rpm             ( Throttle when ARMED [%] *100 + % battery remaining as reported by Mavlink)
  * VSpd            ( Vertical speed [m/s] )
- * Speed           ( Ground speed from GPS,  [km/h] )
+ * GSpd            ( Ground speed from GPS,  [km/h] )
+ * ASpd            ( Air Speed from Airspeed Sensor [km/h])
  * T1              ( GPS status = ap_sat_visible*10) + ap_fixtype )
  * T2              ( Armed Status and Mavlink Messages :- 16 bit value: bit 1: armed - bit 2-5: severity +1 (0 means no message - bit 6-15: number representing a specific text)
- * Vfas            ( same as Cells )
+ * Vfcs            ( same as Cells )
  * Longitud        ( Longitud )
  * Latitud         ( Latitud )
  * Dist            ( Will be calculated by FrSky Taranis as the distance from first received lat/long = Home Position )
@@ -101,7 +102,6 @@
  * *******************************************************
  */
 #include "GCS_MAVLink.h"
-//#include "mavlink.h"
 #include "LSCM.h"
 /*
  * *******************************************************
@@ -111,7 +111,7 @@
 #define debugSerial         Serial
 #define debugSerialBaud     57600
 #define _MavLinkSerial      Serial2
-#define _MavLinkSerialBaud  57600
+#define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk, or 115200 if connected to ULRS Tx UART
 #define START               1
 #define MSG_RATE            10      // Hertz
 #define AP_SYSID            1       // autopilot system id
@@ -128,13 +128,14 @@
  * *** Enable Addons:                                  ***
  * *******************************************************
  */
-//#define USE_FAS_SENSOR_INSTEAD_OF_APM_DATA              // Enable  if you use a FrSky FAS   Sensor.
-//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable  if you want send fake cell info calculated from VFAS, please set MAXCELLs according your Number of LiPo Cells
+//#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
+//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable if you want send fake cell info calculated from VFCS, please set MAXCELLs according your Number of LiPo Cells
 //#define USE_SINGLE_CELL_MONITOR                         // Disable if you use a FrSky FLVSS Sensor. - Setup in LSCM Tab
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-
+//#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
+//#define USE_MAV_RSSI                                        // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -144,17 +145,15 @@
 //#define DEBUG_APM_MAVLINK_MSGS              // Show all messages received from APM
 //#define DEBUG_APM_CONNECTION
 //#define DEBUG_APM_HEARTBEAT                 // MSG #0
-//#define DEBUG_APM_SYS_STATUS                // MSG #1   - not used -> use: DEBUG_APM_BAT
 //#define DEBUG_APM_BAT                       // Debug Voltage and Current received from APM
 //#define DEBUG_APM_GPS_RAW                   // MSG #24
-//#define DEBUG_APM_RAW_IMU                   // MSG #27  - not used -> use: DEBUG_APM_ACC
 //#define DEBUG_APM_ACC                       // Debug Accelerometer
 //#define DEBUG_APM_ATTITUDE                  // MSG #30
 //#define DEBUG_APM_GLOBAL_POSITION_INT       // MSG #33
-//#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63  - planned - currently not implemented - not supported by APM
+//#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63 - not supported by APM
 //#define DEBUG_APM_RC_CHANNELS               // MSG #65
 //#define DEBUG_APM_VFR_HUD                   // MSG #74
-//#define DEBUG_APM_STATUSTEXT                // MSG #254 -
+//#define DEBUG_APM_STATUSTEXT                // MSG #254
 //#define DEBUG_APM_PARSE_STATUSTEXT
 //#define DEBUG_GIMBAL_HEARTBEAT
 //#define DEBUG_OTHER_HEARTBEAT
@@ -162,7 +161,7 @@
 
 // *** DEBUG FrSkySPort Telemetry:
 //#define DEBUG_FrSkySportTelemetry
-//#define DEBUG_FrSkySportTelemetry_FAS
+//#define DEBUG_FrSkySportTelemetry_FCS
 //#define DEBUG_FrSkySportTelemetry_FLVSS
 //#define DEBUG_FrSkySportTelemetry_GPS
 //#define DEBUG_FrSkySportTelemetry_RPM
@@ -183,7 +182,7 @@
  */
 // configure number maximum connected analog inputs(cells)
 // if you build an six cell network then MAXCELLS is 6
-#define MAXCELLS 3
+#define MAXCELLS 4
 
 /*
  * *******************************************************
@@ -265,7 +264,12 @@ time_t      ap_gps_time_unix_utc  = 0;      // Timestamp (microseconds since UNI
                                             // 0 for unknown.
                                             // Commonly filled by the precision time source of a GPS receiver.
 
-// Message #65 RC_CHANNELS
+/*
+ * *******************************************************
+ * *** Message #65  RC_CHANNELS                        ***
+ * *** Needed for Mavlink RSSI                         ***
+ * *******************************************************
+ */
 #ifdef USE_RC_CHANNELS
 uint8_t     ap_chancount          = 0;      // Total number of RC channels being received.
                                             // This can be larger than 18, indicating that more channels are available but
@@ -273,6 +277,11 @@ uint8_t     ap_chancount          = 0;      // Total number of RC channels being
 uint16_t    ap_chan_raw[18]       = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // RC channel x input value, in microseconds.
                                                                             // A value of UINT16_MAX (65535U) implies the channel is unused.
 #endif
+
+#ifdef USE_MAV_RSSI
+uint8_t    ap_rssi               = 0;
+#endif
+
 
 /*
  * *******************************************************

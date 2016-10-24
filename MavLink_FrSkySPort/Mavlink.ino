@@ -405,68 +405,81 @@ void _MavLink_receive() {
          * *** MAVLINK Message #65 - RC_CHANNELS             ***
          * *****************************************************
          */
-        #ifdef USE_RC_CHANNELS
-        case MAVLINK_MSG_ID_RC_CHANNELS:
-          ap_chancount = mavlink_msg_rc_channels_get_chancount(&msg);     // Number of RC Channels used
-          ap_chan_raw[1] = mavlink_msg_rc_channels_get_chan1_raw(&msg);   // The PPM values of the RC channels received.
-          ap_chan_raw[2] = mavlink_msg_rc_channels_get_chan2_raw(&msg);   // The standard PPM modulation is as follows:
-          ap_chan_raw[3] = mavlink_msg_rc_channels_get_chan3_raw(&msg);   // 1000 microseconds: 0%, 2000 microseconds: 100%.
-          ap_chan_raw[4] = mavlink_msg_rc_channels_get_chan4_raw(&msg);   // Individual receivers/transmitters might violate this specification.
-          ap_chan_raw[5] = mavlink_msg_rc_channels_get_chan5_raw(&msg);
-          ap_chan_raw[6] = mavlink_msg_rc_channels_get_chan6_raw(&msg);
-          ap_chan_raw[7] = mavlink_msg_rc_channels_get_chan7_raw(&msg);
-          ap_chan_raw[8] = mavlink_msg_rc_channels_get_chan8_raw(&msg);
-          ap_chan_raw[9] = mavlink_msg_rc_channels_get_chan9_raw(&msg);
-          ap_chan_raw[10] = mavlink_msg_rc_channels_get_chan10_raw(&msg);
-          ap_chan_raw[11] = mavlink_msg_rc_channels_get_chan11_raw(&msg);
-          ap_chan_raw[12] = mavlink_msg_rc_channels_get_chan12_raw(&msg);
-          ap_chan_raw[13] = mavlink_msg_rc_channels_get_chan13_raw(&msg);
-          ap_chan_raw[14] = mavlink_msg_rc_channels_get_chan14_raw(&msg);
-          ap_chan_raw[15] = mavlink_msg_rc_channels_get_chan15_raw(&msg);
-          ap_chan_raw[16] = mavlink_msg_rc_channels_get_chan16_raw(&msg);
-          ap_chan_raw[17] = mavlink_msg_rc_channels_get_chan17_raw(&msg);
-          ap_chan_raw[18] = mavlink_msg_rc_channels_get_chan18_raw(&msg);
-
-          #ifdef DEBUG_APM_RC_CHANNELS
-          if (millis() > RC_DEBUG_TIMEOUT) {
-            RC_DEBUG_TIMEOUT = millis() + 3000;
-            debugSerial.print(millis());
-            debugSerial.print(" - ");
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: chancount: ");
-            debugSerial.print(ap_chancount);
-            debugSerial.println();
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan1-4_raw: ");
-            for (int i = 1; i <= 4; i++) {
-              debugSerial.print(ap_chan_raw[i]);
-              debugSerial.print(", ");
-            }
-            debugSerial.println();
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan5-8_raw: ");
-            for (int i = 5; i <= 8; i++) {
-              debugSerial.print(ap_chan_raw[i]);
-              debugSerial.print(", ");
-            }
-            debugSerial.println();
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan9-12_raw: ");
-            for (int i = 9; i <= 12; i++) {
-              debugSerial.print(ap_chan_raw[i]);
-              debugSerial.print(", ");
-            }
-            debugSerial.println();
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan13-16_raw: ");
-            for (int i = 13; i <= 16; i++) {
-              debugSerial.print(ap_chan_raw[i]);
-              debugSerial.print(", ");
-            }
-            debugSerial.println();
-            debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan17-18_raw: ");
-            for (int i = 16; i < 18; i++) {
-              debugSerial.print(ap_chan_raw[i]);
-              debugSerial.print(", ");
-            }
-            debugSerial.println();
-          }
-          #endif
+        #if defined(USE_RC_CHANNELS) || defined(USE_MAV_RSSI)
+          case MAVLINK_MSG_ID_RC_CHANNELS:
+            #ifdef USE_RC_CHANNELS
+              ap_chancount = mavlink_msg_rc_channels_get_chancount(&msg);     // Number of RC Channels used
+              ap_chan_raw[0] = mavlink_msg_rc_channels_get_chan1_raw(&msg);   // The PPM values of the RC channels received.
+              ap_chan_raw[1] = mavlink_msg_rc_channels_get_chan2_raw(&msg);   // The standard PPM modulation is as follows:
+              ap_chan_raw[2] = mavlink_msg_rc_channels_get_chan3_raw(&msg);   // 1000 microseconds: 0%, 2000 microseconds: 100%.
+              ap_chan_raw[3] = mavlink_msg_rc_channels_get_chan4_raw(&msg);   // Individual receivers/transmitters might violate this specification.
+              ap_chan_raw[4] = mavlink_msg_rc_channels_get_chan5_raw(&msg);
+              ap_chan_raw[5] = mavlink_msg_rc_channels_get_chan6_raw(&msg);
+              ap_chan_raw[6] = mavlink_msg_rc_channels_get_chan7_raw(&msg);
+              ap_chan_raw[7] = mavlink_msg_rc_channels_get_chan8_raw(&msg);
+              ap_chan_raw[8] = mavlink_msg_rc_channels_get_chan9_raw(&msg);
+              ap_chan_raw[9] = mavlink_msg_rc_channels_get_chan10_raw(&msg);
+              ap_chan_raw[10] = mavlink_msg_rc_channels_get_chan11_raw(&msg);
+              ap_chan_raw[11] = mavlink_msg_rc_channels_get_chan12_raw(&msg);
+              ap_chan_raw[12] = mavlink_msg_rc_channels_get_chan13_raw(&msg);
+              ap_chan_raw[13] = mavlink_msg_rc_channels_get_chan14_raw(&msg);
+              ap_chan_raw[14] = mavlink_msg_rc_channels_get_chan15_raw(&msg);
+              ap_chan_raw[15] = mavlink_msg_rc_channels_get_chan16_raw(&msg);
+              ap_chan_raw[16] = mavlink_msg_rc_channels_get_chan17_raw(&msg);
+              ap_chan_raw[17] = mavlink_msg_rc_channels_get_chan18_raw(&msg);
+              #ifdef DEBUG_APM_RC_CHANNELS
+                if (millis() > RC_DEBUG_TIMEOUT) {
+                  RC_DEBUG_TIMEOUT = millis() + 3000;
+                  debugSerial.print(millis());
+                  debugSerial.print(" - ");
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: chancount: ");
+                  debugSerial.print(ap_chancount);
+                  debugSerial.println();
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan1-4_raw: ");
+                  for (int i = 0; i <= 3; i++) {
+                    debugSerial.print(ap_chan_raw[i]);
+                    debugSerial.print(", ");
+                  }
+                  debugSerial.println();
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan5-8_raw: ");
+                  for (int i = 4; i <= 7; i++) {
+                    debugSerial.print(ap_chan_raw[i]);
+                    debugSerial.print(", ");
+                  }
+                  debugSerial.println();
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan9-12_raw: ");
+                  for (int i = 8; i <= 11; i++) {
+                    debugSerial.print(ap_chan_raw[i]);
+                    debugSerial.print(", ");
+                  }
+                  debugSerial.println();
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan13-16_raw: ");
+                  for (int i = 12; i <= 15; i++) {
+                    debugSerial.print(ap_chan_raw[i]);
+                    debugSerial.print(", ");
+                  }
+                  debugSerial.println();
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_chan17-18_raw: ");
+                  for (int i = 16; i < 18; i++) {
+                    debugSerial.print(ap_chan_raw[i]);
+                    debugSerial.print(", ");
+                  }
+                }
+              #endif  
+            #endif
+            #ifdef USE_MAV_RSSI
+              ap_rssi = mavlink_msg_rc_channels_get_rssi(&msg);
+              #ifdef DEBUG_APM_RC_CHANNELS 
+                if (millis() > RC_DEBUG_TIMEOUT) {
+                  RC_DEBUG_TIMEOUT = millis() + 3000;
+                  debugSerial.print(millis());
+                  debugSerial.print(" - ");
+                  debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_rssi: ");
+                  debugSerial.print(ap_rssi);
+                  debugSerial.println();
+                }
+              #endif
+            #endif
           break;
         #endif
         /*
