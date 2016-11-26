@@ -1,9 +1,13 @@
 --
--- CellInfo lua
+-- cellinfo.lua part of of MavLink_FrSkySPort
+--		https://github.com/Clooney82/MavLink_FrSkySPort
 --
 -- Copyright (C) 2014 Michael Wolkstein
+--	 https://github.com/Clooney82/MavLink_FrSkySPort
 --
--- https://github.com/Clooney82/MavLink_FrSkySPort
+-- modified by
+--	(c) 2015 Jochen Kielkopf
+--	 https://github.com/Clooney82/MavLink_FrSkySPort
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -32,6 +36,7 @@ local miditem=0
 local lastitem=0
 local mult=0
 local newtime=0
+local used_flightmode=8
 
 local function init_func()
 	lastimeplaysound=getTime()
@@ -46,16 +51,16 @@ end
 local function run_func(voltcritcal, horn, voltwarnlevel, repeattimeseconds, celldropmvolts)
 	repeattime = repeattimeseconds*100
 	drop = celldropmvolts/10
-	hornfile=""
-	if horn>0 then
-		hornfile="SOUNDS/en/TELEM/ALARM"..horn.."K.wav"
-	end
 
 	newtime=getTime()
 	if newtime-lastimeplaysound>=repeattime then
-		cellmin=getValue("Cmin") + 0.0001 --- 214 = cell-min
-		lastimeplaysound = newtime
+		--if getValue("Cmin") == nil then
+		--	cellmin = data.cmin + 0.0001
+		--else
+			cellmin=getValue("Cmin") + 0.0001 --- 214 = cell-min
+		--end
 
+		lastimeplaysound = newtime
 		firstitem = math.floor(cellmin)
 		miditem = math.floor((cellmin-firstitem) * 10)
 		lastitem = round((((cellmin-firstitem) * 10)-math.floor(((cellmin-firstitem) * 10))) *10)
@@ -63,7 +68,7 @@ local function run_func(voltcritcal, horn, voltwarnlevel, repeattimeseconds, cel
 		if cellmin<=2.0 then --silent
 		elseif cellmin<=voltcritcal/100 then --critical
 			if horn>0 then
-				playFile(hornfile)
+				playFile("/SOUNDS/en/TELEM/ALARM"..horn.."K.wav")
 				playFile("/SOUNDS/en/TELEM/CRICM.wav")
 			else
 				playFile("/SOUNDS/en/TELEM/CRICM.wav")
@@ -87,12 +92,14 @@ local function run_func(voltcritcal, horn, voltwarnlevel, repeattimeseconds, cel
 				oldcellvoltage = cellmin
 			end
 			if oldcellvoltage*100 - cellmin*100 >= drop then
-				playFile("/SOUNDS/en/TELEM/CELLMIN.wav")
-				playNumber(firstitem, 0, 0)
-				playFile("/SOUNDS/en/TELEM/POINT.wav")
-				playNumber(miditem, 0, 0)
-				if lastitem ~= 0 then
-					playNumber(lastitem, 0, 0)
+				if model.getGlobalVariable(7, used_flightmode) == 1 then
+					playFile("/SOUNDS/en/TELEM/CELLMIN.wav")
+					playNumber(firstitem, 0, 0)
+					playFile("/SOUNDS/en/TELEM/POINT.wav")
+					playNumber(miditem, 0, 0)
+					if lastitem ~= 0 then
+						playNumber(lastitem, 0, 0)
+					end
 				end
 				oldcellvoltage = cellmin
 			end

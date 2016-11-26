@@ -53,6 +53,9 @@
 #include "FrSkySportSensorVario.h"
 #include "FrSkySportSingleWireSerial.h"
 #include "FrSkySportTelemetry.h"
+#ifdef SEND_STATUS_TEXT_MESSAGE
+  #include "FrSkySportSensorStatus.h"     // Statustext Message
+#endif
 
 /*
  * *******************************************************
@@ -63,6 +66,9 @@
   FrSkySportSensorFcs fcs;                               // Create FCS sensor with default ID
 #endif
 FrSkySportSensorFuel fuel;                             // Create FUEL sensor with default ID
+#ifdef SEND_STATUS_TEXT_MESSAGE
+  FrSkySportSensorStatus txtmsg(FrSkySportSensor::ID9);                             // Create FUEL sensor with given ID
+#endif
 #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
   FrSkySportSensorFlvss flvss1;                          // Create FLVSS sensor with default ID
   #if (MAXCELLS > 6)
@@ -118,27 +124,25 @@ unsigned long GPS_debug_time = 500;
 void FrSkySPort_Init()
 {
   // Configure the telemetry serial port and sensors (remember to use & to specify a pointer to sensor)
-  #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
+  telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &gps, &ass, &rpm, &sp2uart, &vario, &fuel, &acc);
+
+  #ifndef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
+    telemetry.addSensor( &fcs );
+  #endif
+
+  #if defined USE_SINGLE_CELL_MONITOR || defined USE_FLVSS_FAKE_SENSOR_DATA
     #if (MAXCELLS <= 6)
-      #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
-      #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &flvss1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
-      #endif
+      telemetry.addSensor( &flvss1 );
     #else
-      #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
-      #else
-        telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &flvss1, &flvss2, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
-      #endif
-    #endif
-  #else
-    #ifdef USE_FCS_SENSOR_INSTEAD_OF_APM_DATA
-      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
-    #else
-      telemetry.begin(FrSkySportSingleWireSerial::SERIAL_1, &fcs, &gps, &sp2uart, &rpm, &vario, &fuel, &acc, &ass);
+      telemetry.addSensor( &flvss1 );
+      telemetry.addSensor( &flvss2 );
     #endif
   #endif
+
+  #ifdef SEND_STATUS_TEXT_MESSAGE
+    telemetry.addSensor( &txtmsg );
+  #endif
+
 }
 
 /*
@@ -217,6 +221,12 @@ void FrSkySPort_Process()
    * *****************************************************
    */
   FrSkySportTelemetry_FUEL();
+  /*
+   * *****************************************************
+   * *** Set TextMsg sensor data ()                    ***
+   * *****************************************************
+   */
+  FrSkySportTelemetry_TXTMSG();
   /*
    * *****************************************************
    * *** Send the telemetry data                       ***
@@ -617,8 +627,33 @@ void FrSkySportTelemetry_FUEL() {
  * *****************************************************
  */
 void FrSkySportTelemetry_ASS() {
+   #ifdef DEBUG_FrSkySportTelemetry_ASS
+    debugSerial.print(millis());
+    debugSerial.print("\tFrSky Airspeed (m/s): ");
+    debugSerial.print(ap_airspeed);
+    debugSerial.println();
+  #endif
   ass.setData(ap_airspeed);
 }
+
+/*
+ * *****************************************************
+ * *** Set TextMsg sensor data ()                    ***
+ * *****************************************************
+ */
+void FrSkySportTelemetry_TXTMSG() {
+  #ifdef SEND_STATUS_TEXT_MESSAGE
+    #ifdef DEBUG_FrSkySportTelemetry_TXTMSG
+      txtmsg.setDebug(true);
+    #endif
+    if(status_text_buffer_id != 0) {
+      txtmsg.send_text_message(status_text_buffer);
+      status_text_buffer_id = 0;
+    }
+
+  #endif
+}
+
 /*
  * *****************************************************
  * *** Helper function "queue buffer" to queue       ***

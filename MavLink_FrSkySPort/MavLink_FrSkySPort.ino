@@ -111,7 +111,7 @@
 #define debugSerial         Serial
 #define debugSerialBaud     57600
 #define _MavLinkSerial      Serial2
-#define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk, or 115200 if connected to ULRS Tx UART
+#define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk directly
 #define START               1
 #define MSG_RATE            10      // Hertz
 #define AP_SYSID            1       // autopilot system id
@@ -120,22 +120,24 @@
 #define MY_CMPID            123     // teensy component id
 #define GB_SYSID            71      // gimbal system id
 #define GB_CMPID            67      // gimbal component id
-
+#define MAXCELLS            4       // configure number maximum connected analog inputs(cells). If you build an six cell network then MAXCELLS is 6
 //#define AC_VERSION          3.2
 #define AC_VERSION          3.3
+
 /*
  * *******************************************************
  * *** Enable Addons:                                  ***
  * *******************************************************
  */
 //#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
-//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable if you want send fake cell info calculated from VFCS, please set MAXCELLs according your Number of LiPo Cells
+//#define USE_FLVSS_FAKE_SENSOR_DATA                      // Enable if you want send fake cell info calculated from VFCS, please set MAXCELLs (above) according your Number of LiPo Cells
 //#define USE_SINGLE_CELL_MONITOR                         // Disable if you use a FrSky FLVSS Sensor. - Setup in LSCM Tab
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
 //#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
-//#define USE_MAV_RSSI                                        // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
+//#define USE_MAV_RSSI                                    // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
+#define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -164,25 +166,17 @@
 //#define DEBUG_FrSkySportTelemetry_FCS
 //#define DEBUG_FrSkySportTelemetry_FLVSS
 //#define DEBUG_FrSkySportTelemetry_GPS
+//#define DEBUG_FrSkySportTelemetry_ASS
 //#define DEBUG_FrSkySportTelemetry_RPM
 //#define DEBUG_FrSkySportTelemetry_A3A4
 //#define DEBUG_FrSkySportTelemetry_VARIO
 //#define DEBUG_FrSkySportTelemetry_ACC
 //#define DEBUG_FrSkySportTelemetry_FLIGHTMODE
+//#define DEBUG_FrSkySportTelemetry_TXTMSG
 
 // *** DEBUG other things:
 //#define DEBUG_AVERAGE_VOLTAGE
 //#define DEBUG_LIPO_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
-
-
-/*
- * *******************************************************
- * *** Variables Definitions:                          ***
- * *******************************************************
- */
-// configure number maximum connected analog inputs(cells)
-// if you build an six cell network then MAXCELLS is 6
-#define MAXCELLS 4
 
 /*
  * *******************************************************
@@ -305,6 +299,7 @@ int32_t     ap_climb_rate         = 0;    // 100 = 1m/s
 uint16_t    ap_status_severity    = 255;
 uint16_t    ap_status_send_count  =   0;
 uint16_t    ap_status_text_id     =   0;
+uint16_t    status_text_buffer_id =   0;
 mavlink_statustext_t statustext;
 /*
   MAV_SEVERITY_EMERGENCY=0,     System is unusable. This is a "panic" condition.
@@ -349,6 +344,14 @@ bool          telemetry_initialized =     0;  // Is FrSkySPort Telemetry initial
   LSCM lscm(MAXCELLS, 13, 0.99);
 #endif
 
+/*
+ * *******************************************************
+ * *** Needed Variable for Status Text Message         ***
+ * *******************************************************
+ */
+#ifdef SEND_STATUS_TEXT_MESSAGE
+  char status_text_buffer[128];
+#endif
 
 /*
  * *******************************************************

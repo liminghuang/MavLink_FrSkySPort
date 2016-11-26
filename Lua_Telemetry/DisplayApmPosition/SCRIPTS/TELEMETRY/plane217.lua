@@ -247,39 +247,40 @@
 
 -- Altitude Panel
 	local function htsapanel()
-		lcd.drawLine (htsapaneloffset + 154, 8, htsapaneloffset + 154, 63, SOLID, 0)
-		--heading
-		lcd.drawText(htsapaneloffset + 76,11,"Hdg",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+4,9,getValue("Hdg"),MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),9,"\64",MIDSIZE)
-		--altitude
-		--Alt max
-		lcd.drawText(htsapaneloffset + 76,24,"Alt ",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+3,21,getValue("Alt"),MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),21,"m",MIDSIZE)
+		lcd.drawLine (htsapaneloffset+154,8,htsapaneloffset+154, 63,SOLID,0)
+		--Heading & Alt headers
+		lcd.drawText(htsapaneloffset+74,10,"Alt",SMLSIZE)
+		lcd.drawText(htsapaneloffset+114,10,"Hdg ",SMLSIZE)
+		lcd.drawLine(htsapaneloffset+112,30,htsapaneloffset+153,30,DOTTED,0)
+		lcd.drawLine(htsapaneloffset+73,40,htsapaneloffset+153,40,DOTTED,0)
+		lcd.drawLine(htsapaneloffset+112,9,htsapaneloffset+112,29,DOTTED,0)
+    --Heading
+		lcd.drawNumber(htsapaneloffset+76,18,getValue("Alt")*alt_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),23,alt_units,SMLSIZE)
+		--Alt
+		lcd.drawNumber(htsapaneloffset+116,18,getValue("Hdg"),MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),18,"\64",MIDSIZE)
 		--vspeed
 		vspd= getValue("VSpd")
 		if vspd == 0 then
-			lcd.drawText(lcd.getLastPos(), 24,"==",0)
+			lcd.drawText(88,32,"==",0+SMLSIZE)
 		elseif vspd >0 then
-			lcd.drawText(lcd.getLastPos(), 24,"++",0)
+			lcd.drawText(87,32,"++",0+SMLSIZE)
 		elseif vspd <0 then
-			lcd.drawText(lcd.getLastPos(), 24,"-",0)
+			lcd.drawText(88,32,"--",0+SMLSIZE)
 		end
-		lcd.drawNumber(lcd.getLastPos(),24	,vspd,0+LEFT)
-		lcd.drawText(htsapaneloffset + 76,34,"Max",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+8,34,getValue("AltM"),SMLSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),34,"m",SMLSIZE)
-		--Armed time
-		lcd.drawText(htsapaneloffset + 76,44,"ArmT",SMLSIZE)
-		lcd.drawTimer(lcd.getLastPos()+2,41,model.getTimer(0).value,MIDSIZE)
-		--Model Runtime
-		lcd.drawNumber(lcd.getLastPos()+2,44,model.getTimer(1).value/360,SMLSIZE+LEFT+PREC1)
-		lcd.drawText(lcd.getLastPos()+3,44,"h",SMLSIZE)
-		lcd.drawText(htsapaneloffset + 76,55,"GSpd",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+4,52,getValue("GSpd")*3.6,MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos()+1,55,"ASpd",SMLSIZE)
-		lcd.drawNumber(lcd.getLastPos()+4,52,getValue("ASpd")*3.6,MIDSIZE+LEFT)
+		lcd.drawNumber(99,32,vspd*alt_multi,0+SMLSIZE+LEFT)
+    lcd.drawText(lcd.getLastPos(),32,alt_units .. "/s",SMLSIZE)
+		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM"),SMLSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),32,"m max",SMLSIZE)
+
+		lcd.drawText(htsapaneloffset+74,43,"GSpd",SMLSIZE)
+		lcd.drawText(htsapaneloffset+114,43,"ASpd",SMLSIZE)
+		lcd.drawNumber(htsapaneloffset + 76,51,getValue("GSpd")*speed_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
+		lcd.drawNumber(htsapaneloffset + 116,51,getValue("ASpd")*speed_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
+
 	end
 
 -- Top Panel
@@ -294,7 +295,7 @@
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
 		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS+SMLSIZE)
 		if getValue("A4")==0 then
-			dispTxt="rx-rssi:" .. tostring(getValue("A3"))
+			dispTxt="rx-rssi:" .. tostring(math.ceil(getValue("A3")))
       lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
 		else
 			dispTxt="rssi:" .. tostring(getValue("RSSI"))
@@ -307,27 +308,35 @@
 	local function powerpanel()
 		consumption=getValue("mAh")---
 
-		lcd.drawNumber(4,9,getValue("VFAS")*10,MIDSIZE+PREC1+LEFT)
-		lcd.drawText(lcd.getLastPos(),13,"V",0)
+		lcd.drawNumber(4,10,getValue("VFAS")*10,MIDSIZE+PREC1+LEFT)
+		lcd.drawText(lcd.getLastPos(),14,"V",0)
 
-		lcd.drawNumber(lcd.getLastPos()+8,9,getValue("Cmin")*100,MIDSIZE+PREC2+LEFT)
+		lcd.drawNumber(61,10,getValue("Cmin")*100,MIDSIZE+PREC2)
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,9,"c-",SMLSIZE)
 		lcd.drawText(xposCons,15,"min",SMLSIZE)
 		
-		lcd.drawNumber(4,23,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
-		lcd.drawText(lcd.getLastPos(),27,"A",0)
+		lcd.drawNumber(4,24,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
+		lcd.drawText(lcd.getLastPos(),28,"A",0)
 
-		lcd.drawNumber(lcd.getLastPos()+2,23,consumption + ( consumption * ( model.getGlobalVariable(8, 0)/100 ) ),MIDSIZE+LEFT)
+		lcd.drawNumber(66,24,consumption + ( consumption * ( model.getGlobalVariable(8, 0)/100 ) ),MIDSIZE)
 		xposCons=lcd.getLastPos()
-		lcd.drawText(xposCons,23,"m",SMLSIZE)
-		lcd.drawText(xposCons,28,"Ah",SMLSIZE)
+		lcd.drawText(xposCons,24,"m",SMLSIZE)
+		lcd.drawText(xposCons,29,"Ah",SMLSIZE)
 
-		lcd.drawNumber(1,37,getValue("Watt"),MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),41,"W",0)
+		lcd.drawNumber(1,38,getValue("Watt"),MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),42,"W",0)
 
-		lcd.drawNumber(lcd.getLastPos()+2,42,( watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) )*10,SMLSIZE+PREC1+LEFT)
-		lcd.drawText(lcd.getLastPos(),42,"Wh",SMLSIZE)
+		lcd.drawNumber(65,43,( watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) )*10,SMLSIZE+PREC1)
+		lcd.drawText(lcd.getLastPos(),43,"Wh",SMLSIZE)
+		
+		--Armed time
+		lcd.drawLine(0,53,75,53,SOLID,0)
+		lcd.drawText(1,56,"ArmT",SMLSIZE)
+		lcd.drawTimer(lcd.getLastPos()+2,56,model.getTimer(0).value,SMLSIZE)
+		--Model Runtime
+		lcd.drawNumber(71,56,model.getTimer(1).value/360,SMLSIZE+PREC1)
+		lcd.drawText(lcd.getLastPos(),56,"h",SMLSIZE)
 
 	end
 
@@ -346,8 +355,6 @@
 	local function armed_status()
 		t2 = getValue("T2")
 		apmarmed = t2%0x02
-		-- opentx2.1.3 lua support for latitude and longitude
-    -- added on opentx commit c0dee366c0ae3f9776b3ba305cc3eb6bdeec593a
 		gpsLatLon = getValue("GPS")
 		if (type(gpsLatLon) == "table") then
 			if gpsLatLon["lat"] ~= NIL then

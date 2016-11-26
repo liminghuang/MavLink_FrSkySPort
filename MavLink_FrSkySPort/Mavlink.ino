@@ -498,6 +498,8 @@ void _MavLink_receive() {
             debugSerial.print(millis());
             debugSerial.print("\tMAVLINK_MSG_ID_VFR_HUD: groundspeed: ");
             debugSerial.print(ap_groundspeed);
+            debugSerial.print(", airspeed: ");
+            debugSerial.print(ap_airspeed);
             debugSerial.print(", heading: ");
             debugSerial.print(ap_heading);
             debugSerial.print(", throttle: ");
@@ -523,6 +525,12 @@ void _MavLink_receive() {
           } else {
             parseStatusText_v3_2(statustext.severity, statustext.text);
           }
+
+          #ifdef SEND_STATUS_TEXT_MESSAGE
+            sprintf(status_text_buffer, "%d%s", statustext.severity & 0x7, statustext.text);
+            status_text_buffer_id = ap_status_text_id;
+            //frsky_send_text_message(status_text_buffer);
+          #endif
 
           #ifdef DEBUG_APM_STATUSTEXT
             debugSerial.print(millis());
