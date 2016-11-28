@@ -11,9 +11,8 @@
 --    (2015) Jochen Kielkopf
 --    https://github.com/Clooney82/MavLink_FrSkySPort
 --
---    (2016) Paul Atherton - Fixes for OpenTx 2.1.7 compatibility,
---    enhanced layout, plus Plane specific version.
---    https://github.com/Clooney82/MavLink_FrSkySPort
+--    Fixes for 2.1.7 compatibility (2016) Paul Atherton
+--    Plane specific changes to prior code (2016) Paul Atherton
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -68,7 +67,6 @@
 	local status_textnr = 0
 	local hypdist = 0
 	local battWhmax = 0
-	local maxconsume = 0
 	local whconsumed = 0
 	local batteryreachmaxWH = 0
 
@@ -161,12 +159,12 @@
 
 -- draw Wh Gauge
 	local function drawWhGauge()
-		whconsumed = watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) )
-		if whconsumed >= maxconsume then
-			whconsumed = maxconsume
+		whconsumed = watthours + (watthours*gOffsetwatth/100)
+		if whconsumed > gBatcapwh then
+			whconsumed = gBatcapwh
 		end
 		lcd.drawFilledRectangle(76,9,8,55,INVERS)
-		lcd.drawFilledRectangle(77,9,7, (whconsumed - 0)* ( 55 - 0 ) / (maxconsume - 0) + 0, 0)
+		lcd.drawFilledRectangle(77,9,7, (whconsumed - 0)* ( 55 - 0 ) / (gBatcapwh - 0) + 0, 0)
 	end
 
 --Aux Display functions and panels
@@ -257,10 +255,10 @@
 		lcd.drawLine(htsapaneloffset+112,30,htsapaneloffset+153,30,DOTTED,0)
 		lcd.drawLine(htsapaneloffset+73,40,htsapaneloffset+153,40,DOTTED,0)
 		lcd.drawLine(htsapaneloffset+112,9,htsapaneloffset+112,29,DOTTED,0)
-    --Heading
-		lcd.drawNumber(htsapaneloffset+76,18,getValue("Alt")*alt_multi,MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),23,alt_units,SMLSIZE)
-		--Alt
+    --Alt
+		lcd.drawNumber(htsapaneloffset+76,18,getValue("Alt")*gAlt_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),23,gAlt_units,SMLSIZE)
+		--Heading
 		lcd.drawNumber(htsapaneloffset+116,18,getValue("Hdg"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),18,"\64",MIDSIZE)
 		--vspeed
@@ -272,17 +270,17 @@
 		elseif vspd <0 then
 			lcd.drawText(88,32,"--",0+SMLSIZE)
 		end
-		lcd.drawNumber(99,32,vspd*alt_multi,0+SMLSIZE+LEFT)
-    lcd.drawText(lcd.getLastPos(),32,alt_units .. "/s",SMLSIZE)
+		lcd.drawNumber(99,32,vspd*gAlt_multi,0+SMLSIZE+LEFT)
+    lcd.drawText(lcd.getLastPos(),32,gAlt_units .. "/s",SMLSIZE)
 		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM"),SMLSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),32,"m max",SMLSIZE)
 
 		lcd.drawText(htsapaneloffset+74,43,"GSpd",SMLSIZE)
 		lcd.drawText(htsapaneloffset+114,43,"ASpd",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 76,51,getValue("GSpd")*speed_multi,MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 116,51,getValue("ASpd")*speed_multi,MIDSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
+		lcd.drawNumber(htsapaneloffset + 76,51,getValue("GSpd")*gSpeed_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),56,gSpeed_units,SMLSIZE)
+		lcd.drawNumber(htsapaneloffset + 116,51,getValue("ASpd")*gSpeed_multi,MIDSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),56,gSpeed_units,SMLSIZE)
 
 	end
 
@@ -322,7 +320,7 @@
 		lcd.drawNumber(4,24,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
 		lcd.drawText(lcd.getLastPos(),28,"A",0)
 
-		lcd.drawNumber(66,24,consumption + ( consumption * ( model.getGlobalVariable(8, 0)/100 ) ),MIDSIZE)
+		lcd.drawNumber(66,24,consumption + (consumption*gOffsetmah/100),MIDSIZE)
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,24,"m",SMLSIZE)
 		lcd.drawText(xposCons,29,"Ah",SMLSIZE)
@@ -330,7 +328,7 @@
 		lcd.drawNumber(1,38,getValue("Watt"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),42,"W",0)
 
-		lcd.drawNumber(65,43,( watthours + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) )*10,SMLSIZE+PREC1)
+		lcd.drawNumber(65,43,( watthours + ( watthours*gOffsetwatth/100) )*10,SMLSIZE+PREC1)
 		lcd.drawText(lcd.getLastPos(),43,"Wh",SMLSIZE)
 		
 		--Armed time
@@ -351,7 +349,6 @@
 			localtime = 0
 		end
 		oldlocaltime = getTime()
-		maxconsume = model.getGlobalVariable(8, 2)
 	end
 
 --APM Armed and errors
@@ -426,7 +423,7 @@
 
 -- play alarm wh reach maximum level
 	local function playMaxWhReached()
-		if maxconsume > 0 and (watthours  + ( watthours * ( model.getGlobalVariable(8, 1)/100) ) ) >= maxconsume then
+		if gBatcapwh > 0 and (watthours + watthours*gOffsetwatth/100) >= gBatcapwh then
 			localtimetwo = localtimetwo + (getTime() - oldlocaltimetwo)
 			if localtimetwo >=800 then --8s
 				playFile("/SOUNDS/en/TELEM/ALARM3K.wav")
@@ -436,8 +433,17 @@
 		end
 	end
 
+  local function checkGlobals()
+    if gSpeed_multi == nil then gSpeed_multi = 3.6; gSpeed_units = "kph" end
+    if gAlt_multi == nil then gAlt_multi = 1; gAlt_units = "m" end
+    if gOffsetmah == nil then gOffsetmah = 0 end
+    if gOffsetwatth == nil then gOffsetwatth = 0 end
+    if gBatcapwh == nil then gBatcapwh = 30 end
+  end
+
 --Init
 	local function init()
+		checkGlobals()
 	end
 
 --Background

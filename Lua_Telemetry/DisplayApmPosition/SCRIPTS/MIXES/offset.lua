@@ -9,6 +9,10 @@
 --	(c) 2015 Jochen Kielkopf
 --	 https://github.com/Clooney82/MavLink_FrSkySPort
 --
+-- modified by
+--	(c) 2016 Paul Atherton
+--	 https://github.com/Clooney82/MavLink_FrSkySPort
+--
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
 -- the Free Software Foundation; either version 3 of the License, or
@@ -26,36 +30,35 @@
 local inputs = {
 	{"O-SET mAh% ", VALUE,-100, 100,   0},
 	{"O-SET Wh%",   VALUE,-100, 100,   0},
-	{"BatCap Wh",   VALUE,   0, 250,  30},
+	{"BatCap Wh",   VALUE,   0, 250,  123},
 	{"SpeedUnits",  VALUE,   1, 3,  1},
 	{"AltUnits",    VALUE,   1, 2, 1}
 	}
 
-speed_multi=1
-speed_units="m/s"
-alt_multi=1
-alt_units="m"
-local oldoffsetmah=0
-local oldoffsetwatth=0
-local oldbatcapwh=0
-local used_flightmode=8
-
 local function run_func(offsetmah, offsetwatth, batcapwh, spunits, aunits)
-	if oldoffsetmah ~= offsetmah or oldoffsetwatth ~= offsetwatth or oldbatcapwh ~= batcapwh then
-	  model.setGlobalVariable(1, used_flightmode, offsetmah)   --mAh
-    model.setGlobalVariable(2, used_flightmode, offsetwatth) --Wh
-    model.setGlobalVariable(3, used_flightmode, batcapwh)    --Wh
-	  oldoffsetmah   = offsetmah
-	  oldoffsetwatth = offsetwatth
-	  oldbatcapwh    = batcapwh
+  gOffsetmah = offsetmah
+  gOffsetwatth = offsetwatth
+  gBatcapwh = batcapwh
+  
+	if spunits == 2 then --check SpeedUnits input & set global vars
+	  gSpeed_multi = 3.6
+	  gSpeed_units = "kph"
+	elseif spunits == 3 then
+	  gSpeed_multi = 2.23694
+	  gSpeed_units = "mph"
+  else
+    gSpeed_multi = 1
+  	gSpeed_units = "m/s"
 	end
-	if spunits == 1 then speed_multi = 1; speed_units = "m/s"
-	elseif spunits == 2 then speed_multi = 3.6; speed_units = "kph"
-	elseif spunits == 3 then speed_multi = 2.23694; speed_units = "mph"
+
+	if aunits == 2 then  --check AltUnits input & set global vars
+	  gAlt_multi = 3.28084
+	  gAlt_units = "f"
+  else
+    gAlt_multi = 1
+	  gAlt_units = "m"
 	end
-	if aunits == 1 then alt_multi = 1; alt_units = "m"
-	elseif aunits == 2 then alt_multi = 3.28084; alt_units = "f"
-	end
+	
 end
 
 return {run=run_func, input=inputs}
