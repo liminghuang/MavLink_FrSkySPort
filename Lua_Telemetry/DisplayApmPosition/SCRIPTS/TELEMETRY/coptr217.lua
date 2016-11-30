@@ -12,7 +12,6 @@
 --    https://github.com/Clooney82/MavLink_FrSkySPort
 --
 --    Fixes for 2.1.7 compatibility (2016) Paul Atherton
---    Plane specific changes to prior code (2016) Paul Atherton
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -42,7 +41,7 @@
 	local consumption = 0
 	local vspd = 0
 	local xposCons = 0
-	local dispTxt = ""
+  local dispTxt = ""
 	local t2 = 0
 	local prearmheading = 0
 	local radarx = 0
@@ -92,6 +91,16 @@
 	local gpsLatLon = {}
 	local LocationLat = 0
 	local LocationLon = 0
+
+	--liming add
+	local time_turbo = 0
+	local voice_time = 0
+	local old_voice_time = 0
+	local take_turn = 1 -- 1:battery 2:height 3:speed 4:GPS
+
+	local VoiceAction = function(Number)
+		playFile("/SOUNDS/tw/" .. tostring(Number) .. ".wav")
+	end
 
 --Timer 0 is time while vehicle is armed
 	model.setTimer(0, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=true, persistent=1})
@@ -285,7 +294,7 @@
 	end
 
 -- Top Panel
-	local function toppanel() 
+	local function toppanel()
 		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 		if apmarmed==1 then
 			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS)
@@ -302,7 +311,7 @@
 			dispTxt="rssi:" .. tostring(getValue("RSSI"))
       lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
 		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
-		end  
+		end
 	end
 
 --Power Panel
@@ -316,7 +325,7 @@
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,9,"c-",SMLSIZE)
 		lcd.drawText(xposCons,15,"min",SMLSIZE)
-		
+
 		lcd.drawNumber(4,24,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
 		lcd.drawText(lcd.getLastPos(),28,"A",0)
 
@@ -330,7 +339,7 @@
 
 		lcd.drawNumber(65,43,( watthours + ( watthours*gOffsetwatth/100) )*10,SMLSIZE+PREC1)
 		lcd.drawText(lcd.getLastPos(),43,"Wh",SMLSIZE)
-		
+
 		--Armed time
 		lcd.drawLine(0,53,75,53,SOLID,0)
 		lcd.drawText(1,56,"ArmT",SMLSIZE)
@@ -441,6 +450,150 @@
     if gBatcapwh == nil then gBatcapwh = 30 end
   end
 
+-- voice task
+	local function play_number(x)
+		if tonumber(x)>1000 then
+			play_number(tonumber(string.format("%u",x/1000)))
+			VoiceAction("thousand")
+			play_number(tonumber(string.format("%u",x%1000)))
+		elseif (x%1000)==0 then
+			VoiceAction(x/1000)
+			VoiceAction("hundred")
+		elseif x>100 then
+			play_number(tonumber(string.format("%u",x/100)))
+			VoiceAction("hundred")
+			play_number(tonumber(string.format("%u",x%100)))
+		elseif (x%100)==0 then
+			VoiceAction(x/100)
+			VoiceAction("hundred")
+		elseif x <10 then
+			VoiceAction(x)
+		elseif (x%10)==0 then
+			VoiceAction(x)
+		elseif x >90 then
+			VoiceAction(90)
+			VoiceAction(x%10)
+		elseif x >80 then
+			VoiceAction(80)
+			VoiceAction(x%10)
+		elseif x >70 then
+			VoiceAction(70)
+			VoiceAction(x%10)
+		elseif x >60 then
+			VoiceAction(60)
+			VoiceAction(x%10)
+		elseif x >50 then
+			VoiceAction(50)
+			VoiceAction(x%10)
+		elseif x >40 then
+			VoiceAction(40)
+			VoiceAction(x%10)
+		elseif x >30 then
+			VoiceAction(30)
+			VoiceAction(x%10)
+		elseif x >20 then
+			VoiceAction(20)
+			VoiceAction(x%10)
+		elseif x >10 then
+			VoiceAction(10)
+			VoiceAction(x%10)
+		end
+	end
+
+	function getIntPart(x)
+		if x <= 0 then
+   			return math.ceil(x)
+		end
+
+		if math.ceil(x) == x then
+   			x = math.ceil(x)
+		else
+   			x = math.ceil(x) - 1
+		end
+		return x
+	end
+
+	local function speed_voice()
+		gps_speed = tonumber(string.format("%u", getValue("GSpd")*3.6))
+		if gps_speed>1 then
+			VoiceAction("speed")
+			if gps_speed<10 then
+				VoiceAction(gps_speed)
+			elseif gps_speed >=10 then
+				play_number(gps_speed)
+			end
+		else
+			VoiceAction("speed")
+			VoiceAction(0)
+		end
+	end
+
+	local function gps_voice()
+		if telem_sats>0 then
+			VoiceAction("gps")
+			if telem_sats<10 then
+				VoiceAction(telem_sats)
+			elseif telem_sats >=10 then
+				play_number(telem_sats)
+			end
+		else
+			VoiceAction("gps")
+			VoiceAction(0)
+		end
+	end
+
+	local function height_voice() --Alt
+		if(getValue("Alt")>0) then
+			VoiceAction("height")
+			Gheight = tonumber(string.format("%u", getValue("Alt")))
+			play_number(Gheight)
+			VoiceAction("meter")
+		end
+	end
+
+	local function battery_voice()
+  		if(getValue("VFAS")>0) then
+			--bat = getValue("VFAS")
+  			bat = string.format("%0.1f", getValue("VFAS"))
+	  		VoiceAction("battery")
+	  		Va,Vb = math.modf(bat)
+	  		play_number(Va)
+	  		if (Vb > 0) then
+	  			VoiceAction("dot")
+	  			VoiceAction((bat*10)%10)
+				--play_number(Vb)
+	  		end
+	 	end
+	end
+
+	local function voice_task()
+		if getValue("sd") < 1024 then --switch D control voice on/off
+			return 0
+		end
+		voice_time = voice_time + (getTime() - old_voice_time) + time_turbo
+	  	if voice_time >=850 then
+			if take_turn==1 then
+				time_turbo = 1
+				battery_voice()
+				take_turn = take_turn+1
+			elseif take_turn==2 then
+				time_turbo = 3
+				height_voice()
+				take_turn = take_turn+1
+			elseif take_turn==3 then
+				time_turbo = 3
+				gps_voice()
+				take_turn = take_turn+1
+			elseif take_turn==4 then
+				time_turbo = 3
+				speed_voice()
+				take_turn = 1
+			end
+			voice_time = 0
+		end
+		old_voice_time = getTime()
+	end
+
 --Init
 	local function init()
 		checkGlobals()
@@ -452,6 +605,7 @@
 		Flight_modes()
 		calcWattHs()
 		playMaxWhReached()
+		voice_task()
 	end
 
 --Main
