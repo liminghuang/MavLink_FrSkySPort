@@ -28,17 +28,19 @@
 --
 
 local inputs = {
-	{"O-SET mAh% ", VALUE,-100, 100,   0},
+	{"O-SET mAh%",  VALUE,-100, 100,   0},
 	{"O-SET Wh%",   VALUE,-100, 100,   0},
 	{"BatCap Wh",   VALUE,   0, 250,  123},
 	{"SpeedUnits",  VALUE,   1, 3,  1},
-	{"AltUnits",    VALUE,   1, 2, 1}
+	{"AltUnits",    VALUE,   1, 2, 1},
+	{"Coptr/Plan",  VALUE,   1, 2, 1}
 	}
 
-local function run_func(offsetmah, offsetwatth, batcapwh, spunits, aunits)
+local function run_func(offsetmah, offsetwatth, batcapwh, spunits, aunits, aptype)
   gOffsetmah = offsetmah
   gOffsetwatth = offsetwatth
   gBatcapwh = batcapwh
+  gAPType = aptype
   
 	if spunits == 2 then --check SpeedUnits input & set global vars
 	  gSpeed_multi = 3.6

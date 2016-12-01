@@ -1,5 +1,5 @@
 --
--- coptr217 lua
+-- telempc lua
 --
 -- Copyright (C) 2014 Luis Vale Gonçalves
 --   https://github.com/lvale/MavLink_FrSkySPort
@@ -11,7 +11,16 @@
 --    (2015) Jochen Kielkopf
 --    https://github.com/Clooney82/MavLink_FrSkySPort
 --
---    Fixes for 2.1.7 compatibility (2016) Paul Atherton
+--    (2016) Paul Atherton
+--    https://github.com/Clooney82/MavLink_FrSkySPort
+--
+--   Recent changes include:
+--   OpenTx 2.1.7 (and newer) compatibility (will not work with older 2.1 revisions). Separate repo for OpenTx 2.0.
+--   Both Copter and Plane versions of Ardupilot now supported in this one telemetry script
+--     Use offset.lua mixer script to choose between 1 = Copter, or 2 = Plane
+--   Also includes several new unit display options selectable in offset.lua including:
+--     SpeedUnits (to select units for ground and air speed) 1 = m/s, 2 = kph, 3 = mph
+--     AltUnits (to select units of altitude) 1 = m (and m/s for climb rate), 2 = f (and f/s for climb rate)
 --
 -- This program is free software; you can redistribute it and/or modify
 -- it under the terms of the GNU General Public License as published by
@@ -31,10 +40,12 @@
 --
 
 --Init Variables
-	local SumFlight = 0
+--  local APType = 1  -- ArduPilot firmware: 1 = copter, 2 = plane
+  local SumFlight = 0
 	local lastarmed = 0
 	local apmarmed = 0
-	local FmodeNr = 13 -- This is an invalid flight number when no data available
+  local	WavSfx
+	local FmodeNr
 	local last_flight_mode = 1
 	local last_apm_message_played = 0
 	local mult = 0
@@ -109,7 +120,8 @@
 	--model.setTimer(1, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=false, persistent=1})
 
 --Init Flight Tables
-	local FlightMode = {
+ 
+	local FlightMode = {{
 		"Stabilize",
 		"Acro",
 		"Altitude Hold",
@@ -128,8 +140,26 @@
 		"Auto Tune",
 		"Position Hold",
 		"Brake"
-	}
-
+	},
+	{
+		"Manual",
+		"Circle",
+		"Stabilize",
+		"Training",
+		"Acro",
+		"Fly By Wire A",
+		"Fly By Wire B",
+		"Cruise",
+		"Auto Tune",
+		"Invalid Mode",
+		"Auto",
+		"Return to launch",
+		"Loiter",
+		"Invalid Mode",
+		"Invalid Mode",
+		"Guided"
+	}}
+  
 	local apm_status_message = {severity = 0, textnr = 0, timestamp=0}
 
 	local arrowLine = {
@@ -297,9 +327,11 @@
 	local function toppanel()
 		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 		if apmarmed==1 then
-			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS)
+			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS)
+--			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS)
 		else
-			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
+			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS+BLINK)
+--			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
 		end
 		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
@@ -384,7 +416,7 @@
 				model.setTimer(0,{ mode=1, start=0, value=SumFlight, countdownBeep=0, minuteBeep=true, persistent=1 })
 				model.setTimer(1,{ mode=1, start=0, value=PersitentSumFlight, countdownBeep=0, minuteBeep=false, persistent=2 })
 				playFile("/SOUNDS/en/TELEM/SARM.wav")
-				playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1).."A.wav")
+				playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
 			else
 				SumFlight = model.getTimer(0).value
 				model.setTimer(0,{ mode=0, start=0, value=model.getTimer(0).value, countdownBeep=0, minuteBeep=true, persistent=1 })
@@ -420,12 +452,24 @@
 
 --FlightModes
 	local function Flight_modes()
+	  if gAPType == 1 then 
+	    WavSfx = "A"
+	    FmodeNr = 13  -- This is an invalid flight number for Copter when no data available
+	  else 
+	    WavSfx = "P" 
+	    FmodeNr = 10  -- This is an invalid flight number for Plane when no data available
+	  end
 		FmodeNr = getValue("Fuel")+1
-		if FmodeNr<1 or FmodeNr>16 then
-			FmodeNr=10
+		if FmodeNr<1 or FmodeNr>#FlightMode[gAPType] then
+			if gAPType == 1 then
+			  FmodeNr=13
+			else
+			  FmodeNr=10
+			end
 		end
 		if FmodeNr~=last_flight_mode then
-			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1).."P.wav")
+			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
+			playNumber(gAPType,0,0)
 			last_flight_mode=FmodeNr
 		end
 	end
@@ -448,6 +492,7 @@
     if gOffsetmah == nil then gOffsetmah = 0 end
     if gOffsetwatth == nil then gOffsetwatth = 0 end
     if gBatcapwh == nil then gBatcapwh = 30 end
+    if gAPType == nil then gAPType = 1 end
   end
 
 -- voice task
