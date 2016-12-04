@@ -110,7 +110,7 @@
 	--model.setTimer(1, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=false, persistent=1})
 
 --Init Flight Tables
- 
+
 	local FlightMode = {{
 		"Stabilize",
 		"Acro",
@@ -149,7 +149,7 @@
 		"Invalid Mode",
 		"Guided"
 	}}
-  
+
 	local apm_status_message = {severity = 0, textnr = 0, timestamp=0}
 
 	local arrowLine = {
@@ -271,8 +271,8 @@
 		for j=21, 61, 4 do
 			lcd.drawPoint(167+22, j)
 		end
-		lcd.drawNumber(189, 57,hypdist, SMLSIZE)
-		lcd.drawText(lcd.getLastPos(), 57, "m", SMLSIZE)
+		lcd.drawNumber(189, 57,hypdist*gAlt_multi, SMLSIZE)
+		lcd.drawText(lcd.getLastPos(), 57, gAlt_units, SMLSIZE)
 	end
 
 -- Altitude Panel
@@ -301,8 +301,8 @@
 		end
 		lcd.drawNumber(99,32,vspd*gAlt_multi,0+SMLSIZE+LEFT)
     lcd.drawText(lcd.getLastPos(),32,gAlt_units .. "/s",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM"),SMLSIZE+LEFT)
-		lcd.drawText(lcd.getLastPos(),32,"m max",SMLSIZE)
+		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM")*gAlt_multi,SMLSIZE+LEFT)
+		lcd.drawText(lcd.getLastPos(),32,gAlt_units .. " max",SMLSIZE)
 
 		lcd.drawText(htsapaneloffset+74,43,"GSpd",SMLSIZE)
 		lcd.drawText(htsapaneloffset+114,43,"ASpd",SMLSIZE)
@@ -314,7 +314,7 @@
 	end
 
 -- Top Panel
-	local function toppanel() 
+	local function toppanel()
 		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 		if apmarmed==1 then
 			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS)
@@ -333,7 +333,7 @@
 			dispTxt="rssi:" .. tostring(getValue("RSSI"))
       lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
 		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
-		end  
+		end
 	end
 
 --Power Panel
@@ -347,7 +347,7 @@
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,9,"c-",SMLSIZE)
 		lcd.drawText(xposCons,15,"min",SMLSIZE)
-		
+
 		lcd.drawNumber(4,24,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
 		lcd.drawText(lcd.getLastPos(),28,"A",0)
 
@@ -361,7 +361,7 @@
 
 		lcd.drawNumber(65,43,( watthours + ( watthours*gOffsetwatth/100) )*10,SMLSIZE+PREC1)
 		lcd.drawText(lcd.getLastPos(),43,"Wh",SMLSIZE)
-		
+
 		--Armed time
 		lcd.drawLine(0,53,75,53,SOLID,0)
 		lcd.drawText(1,56,"ArmT",SMLSIZE)
@@ -442,11 +442,11 @@
 
 --FlightModes
 	local function Flight_modes()
-	  if gAPType == 1 then 
+	  if gAPType == 1 then
 	    WavSfx = "A"
 	    FmodeNr = 13  -- This is an invalid flight number for Copter when no data available
-	  else 
-	    WavSfx = "P" 
+	  else
+	    WavSfx = "P"
 	    FmodeNr = 10  -- This is an invalid flight number for Plane when no data available
 	  end
 		FmodeNr = getValue("Fuel")+1
