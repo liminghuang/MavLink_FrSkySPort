@@ -115,7 +115,13 @@ uint32_t handle_A2_A3_value(uint32_t value)
   return (value *330-165)/0xFF;
 }
 
-unsigned long GPS_debug_time = 500;
+#ifdef DEBUG_FrSkySportTelemetry_GPS
+  unsigned long GPS_debug_time = 200;
+#endif
+
+#ifdef DEBUG_FrSkySportTelemetry_ASS
+  unsigned long ASS_debug_time = 200;
+#endif
 /*
  * *******************************************************
  * *** Initialize FrSkySPortTelemetry                  ***
@@ -410,56 +416,33 @@ void FrSkySportTelemetry_FLVSS() {
 void FrSkySportTelemetry_GPS() {
     gps.setData(ap_latitude / 1E7, ap_longitude / 1E7,    // Latitude and longitude in degrees decimal (positive for N/E, negative for S/W)
         ap_gps_altitude / 10.0,                     // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
-        ap_gps_speed * 10.0,                        // GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
-        ap_heading ,                                // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+        ap_groundspeed,
+        ap_heading,                                // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
         ap_gps_hdop);                               // GPS HDOP horizontal dilution of position in cm (m*100)
 
     #ifdef DEBUG_FrSkySportTelemetry_GPS
       if (millis() > GPS_debug_time) {
         debugSerial.print(millis());
-        debugSerial.print("\tAPM Latitude:\t");
-        debugSerial.print(ap_latitude);
-        debugSerial.print("\tAPM Longitude:\t\t");
-        debugSerial.println(ap_longitude);
-        debugSerial.print(millis());
-        debugSerial.print("\tFrSky Latitude:\t");
+        debugSerial.print("\tFrSky Latitude: ");
         debugSerial.print(ap_latitude/1E7);
-        debugSerial.print("\tFrSky Longitude:\t");
-        debugSerial.println(ap_longitude/1E7);
-        debugSerial.print(millis());
+        debugSerial.print("\tFrSky Longitude: ");
+        debugSerial.print(ap_longitude/1E7);
         debugSerial.print("\tGPSAlt: ");
         debugSerial.print(ap_gps_altitude / 10.0);
         debugSerial.print("cm");
-        debugSerial.print("\tGPSSpeed: ");
-        debugSerial.print((ap_gps_speed / 100.0 ));
+        debugSerial.print("\tGroundSpeed: ");
+        debugSerial.print(ap_groundspeed);
         debugSerial.print("m/s");
-
         debugSerial.print("\tCog: ");
         debugSerial.print(ap_cog);
         debugSerial.print("°");
-
         debugSerial.print("\tHeading: ");
         debugSerial.print(ap_heading);
         debugSerial.print("°");
         debugSerial.print("\tHDOP (A2): ");
         debugSerial.print(ap_gps_hdop);
-        /*
-        debugSerial.print("\tDATE: ");
-        debugSerial.print(year(ap_gps_time_unix_utc));
-        debugSerial.print("-");
-        debugSerial.print(month(ap_gps_time_unix_utc));
-        debugSerial.print("-");
-        debugSerial.print(day(ap_gps_time_unix_utc));
-        debugSerial.print("\tTIME: ");
-        debugSerial.print(hour(ap_gps_time_unix_utc));
-        debugSerial.print(":");
-        debugSerial.print(minute(ap_gps_time_unix_utc));
-        debugSerial.print(":");
-        debugSerial.print(second(ap_gps_time_unix_utc));
-        */
         debugSerial.println();
-        debugSerial.println();
-        GPS_debug_time = millis() + 500;
+        GPS_debug_time = millis() + 200;
       }
     #endif
 }
@@ -544,8 +527,8 @@ void FrSkySportTelemetry_A3A4() {
       debugSerial.println();
     #endif
     sp2uart.setData(ap_rssi / 2.55,   // Mavlink RSSI
-                    0);          // Assign zero to A4 - used in LUA to replace regular RSSI with RSSI on A3
-  #else                    //if no polling then we will output roll/pitch on A3/A4
+                              0);     // Assign zero to A4 - used in LUA to replace regular RSSI with RSSI on A3
+  #else                               //if no polling then we will output roll/pitch on A3/A4
     #ifdef DEBUG_FrSkySportTelemetry_A3A4
       debugSerial.print(millis());
       debugSerial.print("\tRoll Angle (A3): ");
@@ -627,11 +610,14 @@ void FrSkySportTelemetry_FUEL() {
  * *****************************************************
  */
 void FrSkySportTelemetry_ASS() {
-   #ifdef DEBUG_FrSkySportTelemetry_ASS
-    debugSerial.print(millis());
-    debugSerial.print("\tFrSky Airspeed (m/s): ");
-    debugSerial.print(ap_airspeed);
-    debugSerial.println();
+  #ifdef DEBUG_FrSkySportTelemetry_ASS
+    if (millis() > ASS_debug_time) {
+      debugSerial.print(millis());
+      debugSerial.print("\tFrSky Airspeed (m/s): ");
+      debugSerial.print(ap_airspeed);
+      debugSerial.println();
+      ASS_debug_time = millis() + 200;
+    }
   #endif
   ass.setData(ap_airspeed);
 }
@@ -682,8 +668,7 @@ int statusQueuelevel () {
    return statusRingTail - statusRingHead + (statusRingHead > statusRingTail ? statusRingsize : 0);
 }
 
-// Get something from the queue. 0 will be returned if the queue
-// is empty
+// Get something from the queue. 0 will be returned if the queue is empty
 int32_t statusDequeue () {
   if (statusRingHead == statusRingTail) {
      return 0;
