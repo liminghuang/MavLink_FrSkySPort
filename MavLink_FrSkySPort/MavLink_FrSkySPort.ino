@@ -188,11 +188,8 @@
  * *** Message #0  HEARTHBEAT                          ***
  * *******************************************************
  */
-//uint8_t     ap_type               =  0;
-//uint8_t     ap_autopilot          =  0;
 uint8_t     ap_base_mode          =  0;
 int32_t     ap_custom_mode        = -1;
-//uint8_t     ap_system_status      =  0;
 uint8_t     ap_mavlink_version    =  0;
 
 /*
@@ -220,11 +217,7 @@ int32_t     ap_latitude           =   0;    // Latitude (WGS84), in degrees * 1E
 int32_t     ap_longitude          =   0;    // Longitude (WGS84), in degrees * 1E7
 int32_t     ap_gps_altitude       =   0;    // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up).
                                             // Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
-//int32_t latitude  = 0;
-//int32_t longitude = 0;
-int32_t     ap_gps_speed          =   0;    // GPS ground speed (m/s * 100)
 uint16_t    ap_gps_hdop           = 255;    // GPS HDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
-//uint16_t    ap_gps_vdop           =   0;    // GPS VDOP horizontal dilution of position in cm (m*100). If unknown, set to: 65535
 uint32_t    ap_cog                =   0;    // Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: 65535
 
 /*
@@ -282,13 +275,13 @@ uint8_t    ap_rssi               = 0;
  * *** Message #74  VFR_HUD                            ***
  * *******************************************************
  */
-int32_t     ap_airspeed           = 0;    // Current airspeed in m/s
-uint32_t    ap_groundspeed        = 0;    // Current ground speed in m/s
-uint32_t    ap_heading            = 0;    // Current heading in degrees, in compass units (0..360, 0=north)
+float     ap_airspeed           = 0;    // Current airspeed in m/s
+float    ap_groundspeed        = 0;    // Current ground speed in m/s
+int16_t    ap_heading            = 0;    // Current heading in degrees, in compass units (0..360, 0=north)
 uint16_t    ap_throttle           = 0;    // Current throttle setting in integer percent, 0 to 100
 // FrSky Taranis uses the first recieved value after 'PowerOn' or  'Telemetry Reset'  as zero altitude
-int32_t     ap_bar_altitude       = 0;    // 100 = 1m
-int32_t     ap_climb_rate         = 0;    // 100 = 1m/s
+float     ap_bar_altitude       = 0;    // 100 = 1m
+float     ap_climb_rate         = 0;    // 100 = 1m/s
 
 
 /*

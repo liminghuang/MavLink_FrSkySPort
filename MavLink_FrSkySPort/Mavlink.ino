@@ -291,12 +291,7 @@ void _MavLink_receive() {
             ap_latitude = mavlink_msg_gps_raw_int_get_lat(&msg);
             ap_longitude = mavlink_msg_gps_raw_int_get_lon(&msg);
             ap_gps_altitude = mavlink_msg_gps_raw_int_get_alt(&msg);      // 1m = 1000
-            ap_gps_speed = mavlink_msg_gps_raw_int_get_vel(&msg);         // 100 = 1m/s
             ap_cog = mavlink_msg_gps_raw_int_get_cog(&msg)/100;
-          }
-          else
-          {
-            ap_gps_speed = 0;
           }
           #ifdef DEBUG_APM_GPS_RAW
             debugSerial.print(millis());
@@ -306,8 +301,6 @@ void _MavLink_receive() {
             debugSerial.print(ap_sat_visible);
             debugSerial.print(", status: ");
             debugSerial.print(gps_status);
-            debugSerial.print(", gpsspeed: ");
-            debugSerial.print(mavlink_msg_gps_raw_int_get_vel(&msg)/100.0);
             debugSerial.print(", hdop: ");
             debugSerial.print(mavlink_msg_gps_raw_int_get_eph(&msg)/100.0);
             debugSerial.print(", alt: ");
@@ -465,11 +458,11 @@ void _MavLink_receive() {
                     debugSerial.print(", ");
                   }
                 }
-              #endif  
+              #endif
             #endif
             #ifdef USE_MAV_RSSI
               ap_rssi = mavlink_msg_rc_channels_get_rssi(&msg);
-              #ifdef DEBUG_APM_RC_CHANNELS 
+              #ifdef DEBUG_APM_RC_CHANNELS
                 if (millis() > RC_DEBUG_TIMEOUT) {
                   RC_DEBUG_TIMEOUT = millis() + 3000;
                   debugSerial.print(millis());
@@ -488,12 +481,12 @@ void _MavLink_receive() {
          * *****************************************************
          */
         case MAVLINK_MSG_ID_VFR_HUD:
-          ap_groundspeed = mavlink_msg_vfr_hud_get_groundspeed(&msg);      // 100 = 1m/s
-          ap_airspeed = mavlink_msg_vfr_hud_get_airspeed(&msg);            // 100 = 1m/s
+          ap_groundspeed = mavlink_msg_vfr_hud_get_groundspeed(&msg);      // m/s
+          ap_airspeed = mavlink_msg_vfr_hud_get_airspeed(&msg);            // m/s
           ap_heading = mavlink_msg_vfr_hud_get_heading(&msg);              // 100 = 100 deg
-          ap_throttle = mavlink_msg_vfr_hud_get_throttle(&msg);            //  100 = 100%
-          ap_bar_altitude = mavlink_msg_vfr_hud_get_alt(&msg) * 100;       //  m
-          ap_climb_rate=mavlink_msg_vfr_hud_get_climb(&msg) * 100;         //  m/s
+          ap_throttle = mavlink_msg_vfr_hud_get_throttle(&msg);            // 100 = 100%
+          ap_bar_altitude = mavlink_msg_vfr_hud_get_alt(&msg) * 100;       // m
+          ap_climb_rate=mavlink_msg_vfr_hud_get_climb(&msg) * 100;         // m/s
           #ifdef DEBUG_APM_VFR_HUD
             debugSerial.print(millis());
             debugSerial.print("\tMAVLINK_MSG_ID_VFR_HUD: groundspeed: ");
