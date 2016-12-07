@@ -41,6 +41,7 @@
 
 --Init Variables
 --  local APType = 1  -- ArduPilot firmware: 1 = copter, 2 = plane
+  local APType = 1
   local SumFlight = 0
 	local lastarmed = 0
 	local apmarmed = 0
