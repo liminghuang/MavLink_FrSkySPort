@@ -204,7 +204,7 @@
 
 -- GPS Panel
 	local function gpspanel()
-		telem_t1 = getValue("T1") -- Temp1
+		telem_t1 = getValue("Tmp1") -- Temp1
 		telem_lock = 0
 		telem_sats = 0
 		telem_lock = telem_t1%10
@@ -384,7 +384,7 @@
 
 --APM Armed and errors
 	local function armed_status()
-		t2 = getValue("T2")
+		t2 = getValue("Tmp2")
 		apmarmed = t2%0x02
 		gpsLatLon = getValue("GPS")
 		if (type(gpsLatLon) == "table") then
@@ -459,7 +459,6 @@
 		end
 		if FmodeNr~=last_flight_mode then
 			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
-			playNumber(gAPType,0,0)
 			last_flight_mode=FmodeNr
 		end
 	end

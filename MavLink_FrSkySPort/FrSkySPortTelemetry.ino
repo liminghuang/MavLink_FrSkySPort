@@ -415,10 +415,10 @@ void FrSkySportTelemetry_FLVSS() {
  */
 void FrSkySportTelemetry_GPS() {
     gps.setData(ap_latitude / 1E7, ap_longitude / 1E7,    // Latitude and longitude in degrees decimal (positive for N/E, negative for S/W)
-        ap_gps_altitude / 10.0,                     // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
-        ap_groundspeed,
-        ap_heading,                                // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
-        ap_gps_hdop);                               // GPS HDOP horizontal dilution of position in cm (m*100)
+        ap_gps_altitude / 10.0,                           // Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
+        ap_groundspeed / 1.944,                           // Counteract Sport library which converts to kts (allows us to use default GPS settings on Taranis)
+        ap_heading,                                       // Heading, in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+        ap_gps_hdop);                                     // GPS HDOP horizontal dilution of position in cm (m*100)
 
     #ifdef DEBUG_FrSkySportTelemetry_GPS
       if (millis() > GPS_debug_time) {
