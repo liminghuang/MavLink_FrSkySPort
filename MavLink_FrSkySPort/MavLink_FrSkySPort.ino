@@ -111,7 +111,7 @@
 #define debugSerial         Serial
 #define debugSerialBaud     57600
 #define _MavLinkSerial      Serial3
-#define _MavLinkSerialBaud  115200   // set to 57600 if Teensy connected to Pixhawk directly
+#define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk directly
 #define START               1
 #define MSG_RATE            10      // Hertz
 #define AP_SYSID            1       // autopilot system id
