@@ -109,6 +109,11 @@
 	local voice_time = 0
 	local old_voice_time = 0
 	local take_turn = 1 -- 1:battery 2:height 3:speed 4:GPS
+	local v_bat = 0
+	local Va = 0
+	local Vb = 0
+	local gps_speed = 0
+	local Gheight = 0
 
 	local VoiceAction = function(Number)
 		playFile("/SOUNDS/tw/" .. tostring(Number) .. ".wav")
@@ -545,19 +550,6 @@
 		end
 	end
 
-	function getIntPart(x)
-		if x <= 0 then
-   			return math.ceil(x)
-		end
-
-		if math.ceil(x) == x then
-   			x = math.ceil(x)
-		else
-   			x = math.ceil(x) - 1
-		end
-		return x
-	end
-
 	local function speed_voice()
 		gps_speed = tonumber(string.format("%u", getValue("GSpd")*3.6))
 		if gps_speed>1 then
@@ -598,15 +590,13 @@
 
 	local function battery_voice()
   		if(getValue("VFAS")>0) then
-			--bat = getValue("VFAS")
-  			bat = string.format("%0.1f", getValue("VFAS"))
+  			v_bat = string.format("%0.1f", getValue("VFAS"))
 	  		VoiceAction("battery")
-	  		Va,Vb = math.modf(bat)
+	  		Va,Vb = math.modf(v_bat)
 	  		play_number(Va)
 	  		if (Vb > 0) then
 	  			VoiceAction("dot")
-	  			VoiceAction((bat*10)%10)
-				--play_number(Vb)
+	  			VoiceAction((v_bat*10)%10)
 	  		end
 	 	end
 	end
