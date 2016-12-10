@@ -103,6 +103,29 @@
  */
 #include "GCS_MAVLink.h"
 #include "LSCM.h"
+
+/* *******************************************************
+ * *** LCD Configuration:                              ***
+ * *******************************************************
+ */
+  int16_t imu_xacc = 0;
+  int16_t imu_yacc = 0;
+  int16_t imu_zacc = 0;
+  int32_t gps_alt = 0;
+  uint8_t gps_type = 0;
+  uint8_t gps_satellites = 0;
+  static float gps_latitude = 0;
+  static float gps_longitude = 0;
+  static float osd_home_lat = 0;
+  static float osd_home_lon = 0;
+  static float osd_home_alt = 0;
+  static float osd_alt = 0;
+  static uint8_t osd_got_home = 0;
+  static float osd_alt_to_home = 0;
+  static long osd_home_distance = 0;
+
+  //#define DEBUG_LCD_MSGS
+
 /*
  * *******************************************************
  * *** Basic Configuration:                            ***
@@ -110,8 +133,10 @@
  */
 #define debugSerial         Serial
 #define debugSerialBaud     57600
-#define _MavLinkSerial      Serial3
+#define _MavLinkSerial      Serial2
 #define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk directly
+#define lcdSerial           Serial3
+#define lcdSerialBaud       115200
 #define START               1
 #define MSG_RATE            10      // Hertz
 #define AP_SYSID            1       // autopilot system id
@@ -135,9 +160,10 @@
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
+//#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
 #define USE_MAV_RSSI                                    // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
 #define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC
+#define USE_LCD_TEXT                                    //Enable external LCD
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -380,6 +406,9 @@ void setup()  {
 
   Mavlink_setup();                          // Init Mavlink
 
+  #ifdef USE_LCD_TEXT
+    _Mavlink_lcd_setup();                     //Init LCD control
+  #endif
 }
 
 /*
