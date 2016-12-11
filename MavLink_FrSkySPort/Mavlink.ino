@@ -5,6 +5,9 @@
  * Copyright (C) 2015 Jochen Kielkopf
  * https://github.com/Clooney82/MavLink_FrSkySPort
  *
+ * Copyright (C) 2016 Paul Atherton
+ * https://github.com/Clooney82/MavLink_FrSkySPort
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
@@ -101,6 +104,17 @@ void Mavlink_config_connection() {
   len = mavlink_msg_to_send_buffer(buf, &msg);
   _MavLinkSerial.write(buf,len);
   delay(10);
+
+  mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_EXTRA1, MSG_RATE, START);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  _MavLinkSerial.write(buf,len);
+  delay(10);
+
+  mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_POSITION, MSG_RATE, START);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  _MavLinkSerial.write(buf,len);
+  delay(10);
+
   mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_EXTRA2, MSG_RATE, START);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   _MavLinkSerial.write(buf,len);
@@ -108,7 +122,7 @@ void Mavlink_config_connection() {
   mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_RAW_SENSORS, MSG_RATE, START);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   _MavLinkSerial.write(buf,len);
-  #ifdef USE_RC_CHANNELS
+  #if defined(USE_RC_CHANNELS) || defined(USE_MAV_RSSI)
     delay(10);
     mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_RC_CHANNELS, MSG_RATE, START);
     len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -130,12 +144,12 @@ void Mavlink_check_connection() {
     if(MavLink_Connected == 1) {
       //Mavlink_send_heartbeat();
     }
-    // Sending Mavlink configuration after 10sec, to give FC enough time to boot.
-    if (send_mavlink_connection_config == 0) {
-      if (millis() > 10000) {
-        Mavlink_config_connection();
+    #ifdef AUTO_MAV_STREAM_CFG
+      // Sending Mavlink configuration after 10sec, to give FC enough time to boot.
+      if (send_mavlink_connection_config == 0) {
+        if (millis() > 10000) Mavlink_config_connection();
       }
-    }
+    #endif
     if(millis() > MavLink_Connected_timer)  {   // if no HEARTBEAT from APM  in 1.5s then we are not connected
       hb_count_lost++;
       if ( hb_count_lost > 5 ) {
@@ -280,6 +294,7 @@ void _MavLink_receive() {
          * *****************************************************
          */
         case MAVLINK_MSG_ID_GPS_RAW_INT:
+          ap_gps_time_unix_utc = mavlink_msg_gps_raw_int_get_time_usec(&msg);
           ap_fixtype = mavlink_msg_gps_raw_int_get_fix_type(&msg);                               // 0 = No GPS, 1 =No Fix, 2 = 2D Fix, 3 = 3D Fix, 4 = DGPS, 5 = RTK
           ap_sat_visible =  mavlink_msg_gps_raw_int_get_satellites_visible(&msg);          // numbers of visible satelites
           gps_status = (ap_sat_visible*10) + ap_fixtype;
@@ -295,7 +310,9 @@ void _MavLink_receive() {
           }
           #ifdef DEBUG_APM_GPS_RAW
             debugSerial.print(millis());
-            debugSerial.print("\tMAVLINK_MSG_ID_GPS_RAW_INT: fixtype: ");
+            debugSerial.print("\tMAVLINK_MSG_ID_GPS_RAW_INT: ap_gps_time_unix_utc: ");
+            debugSerial.print(ap_gps_time_unix_utc);
+            debugSerial.print(", fixtype: ");
             debugSerial.print(ap_fixtype);
             debugSerial.print(", visiblesats: ");
             debugSerial.print(ap_sat_visible);
@@ -381,20 +398,6 @@ void _MavLink_receive() {
           break;
         /*
          * *****************************************************
-         * *** MAVLINK Message #63 - GLOBAL_POSITION_INT_COV ***
-         * *****************************************************
-         */
-        case MAVLINK_MSG_ID_GLOBAL_POSITION_INT_COV:   // 63
-          ap_gps_time_unix_utc = mavlink_msg_global_position_int_cov_get_time_utc(&msg);
-          #ifdef DEBUG_APM_GLOBAL_POSITION_INT_COV
-            debugSerial.print(millis());
-            debugSerial.print("\tap_gps_time_unix_utc: ");
-            debugSerial.print(ap_gps_time_unix_utc);
-            debugSerial.println();
-          #endif
-          break;
-        /*
-         * *****************************************************
          * *** MAVLINK Message #65 - RC_CHANNELS             ***
          * *****************************************************
          */
@@ -466,7 +469,6 @@ void _MavLink_receive() {
                 if (millis() > RC_DEBUG_TIMEOUT) {
                   RC_DEBUG_TIMEOUT = millis() + 3000;
                   debugSerial.print(millis());
-                  debugSerial.print(" - ");
                   debugSerial.print("\tMAVLINK_MSG_ID_RC_CHANNELS: ap_rssi: ");
                   debugSerial.print(ap_rssi);
                   debugSerial.println();
@@ -522,16 +524,15 @@ void _MavLink_receive() {
           #ifdef SEND_STATUS_TEXT_MESSAGE
             sprintf(status_text_buffer, "%d%s", statustext.severity & 0x7, statustext.text);
             status_text_buffer_id = ap_status_text_id;
-            //frsky_send_text_message(status_text_buffer);
           #endif
 
           #ifdef DEBUG_APM_STATUSTEXT
             debugSerial.print(millis());
-            debugSerial.print("\tAC_VERSION: ");
+            debugSerial.print("\tMAVLINK_MSG_ID_STATUSTEXT - AC_VERSION: ");
             debugSerial.print(AC_VERSION);
-            debugSerial.print("\t textId: ");
+            debugSerial.print(", textId: ");
             debugSerial.print(ap_status_text_id);
-            debugSerial.print("\tMAVLINK_MSG_ID_STATUSTEXT - severity: ");
+            debugSerial.print(", severity: ");
             debugSerial.print(statustext.severity);
             debugSerial.print(", text: ");
             debugSerial.print(statustext.text);
