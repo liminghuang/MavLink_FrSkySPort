@@ -129,7 +129,7 @@
 
 /*
  * *******************************************************
- * *** Enable Addons:                                  ***
+ * *** Enable Addons/Options:                          ***
  * *******************************************************
  */
 //#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
