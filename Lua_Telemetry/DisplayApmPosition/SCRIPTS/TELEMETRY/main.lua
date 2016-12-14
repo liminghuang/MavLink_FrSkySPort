@@ -82,6 +82,7 @@
 
 	-- Temporary text attribute
 	local FORCE = 0x02 -- draw ??? line or rectangle
+  local RIGHT = 8 -- required so that number alignment option for OTx 2.2 also works in 2.1
 	local X1 = 0
 	local Y1 = 0
 	local X2 = 0
@@ -271,7 +272,7 @@
 		for j=21, 61, 4 do
 			lcd.drawPoint(167+22, j)
 		end
-		lcd.drawNumber(189, 57,hypdist*gAlt_multi, SMLSIZE)
+		lcd.drawNumber(189, 57,hypdist*gAlt_multi, RIGHT+SMLSIZE)
 		lcd.drawText(lcd.getLastPos(), 57, gAlt_units, SMLSIZE)
 	end
 
@@ -343,7 +344,7 @@
 		lcd.drawNumber(4,10,getValue("VFAS")*10,MIDSIZE+PREC1+LEFT)
 		lcd.drawText(lcd.getLastPos(),14,"V",0)
 
-		lcd.drawNumber(61,10,getValue("Cmin")*100,MIDSIZE+PREC2)
+		lcd.drawNumber(61,10,getValue("Cmin")*100,MIDSIZE+PREC2+RIGHT)
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,9,"c-",SMLSIZE)
 		lcd.drawText(xposCons,15,"min",SMLSIZE)
@@ -351,7 +352,7 @@
 		lcd.drawNumber(4,24,getValue("Curr")*10,MIDSIZE+PREC1+LEFT)
 		lcd.drawText(lcd.getLastPos(),28,"A",0)
 
-		lcd.drawNumber(66,24,consumption + (consumption*gOffsetmah/100),MIDSIZE)
+		lcd.drawNumber(66,24,consumption + (consumption*gOffsetmah/100),MIDSIZE+RIGHT)
 		xposCons=lcd.getLastPos()
 		lcd.drawText(xposCons,24,"m",SMLSIZE)
 		lcd.drawText(xposCons,29,"Ah",SMLSIZE)
@@ -359,7 +360,7 @@
 		lcd.drawNumber(1,38,getValue("Watt"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),42,"W",0)
 
-		lcd.drawNumber(65,43,( watthours + ( watthours*gOffsetwatth/100) )*10,SMLSIZE+PREC1)
+		lcd.drawNumber(65,43,( watthours + ( watthours*gOffsetwatth/100) )*10,SMLSIZE+PREC1+RIGHT)
 		lcd.drawText(lcd.getLastPos(),43,"Wh",SMLSIZE)
 
 		--Armed time
@@ -367,7 +368,7 @@
 		lcd.drawText(1,56,"ArmT",SMLSIZE)
 		lcd.drawTimer(lcd.getLastPos()+2,56,model.getTimer(0).value,SMLSIZE)
 		--Model Runtime
-		lcd.drawNumber(71,56,model.getTimer(1).value/360,SMLSIZE+PREC1)
+		lcd.drawNumber(71,56,model.getTimer(1).value/360,SMLSIZE+PREC1+RIGHT)
 		lcd.drawText(lcd.getLastPos(),56,"h",SMLSIZE)
 
 	end
