@@ -20,6 +20,9 @@
  *    (2015) Jochen Kielkopf
  *    https://github.com/Clooney82/MavLink_FrSkySPort
  *
+ *    (2016) Paul Atherton
+ *    https://github.com/Clooney82/MavLink_FrSkySPort
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
@@ -126,7 +129,7 @@
 
 /*
  * *******************************************************
- * *** Enable Addons:                                  ***
+ * *** Enable Addons/Options:                          ***
  * *******************************************************
  */
 //#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
@@ -137,7 +140,8 @@
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
 //#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
 //#define USE_MAV_RSSI                                    // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
-#define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC
+#define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC - comment out if not required
+#define AUTO_MAV_STREAM_CFG                             // Enable auto Mavlink SRn_ configuration - comment out for manual stream rate configuration
 /*
  * *******************************************************
  * *** Debug Options:                                  ***
@@ -152,7 +156,6 @@
 //#define DEBUG_APM_ACC                       // Debug Accelerometer
 //#define DEBUG_APM_ATTITUDE                  // MSG #30
 //#define DEBUG_APM_GLOBAL_POSITION_INT       // MSG #33
-//#define DEBUG_APM_GLOBAL_POSITION_INT_COV   // MSG #63 - not supported by APM
 //#define DEBUG_APM_RC_CHANNELS               // MSG #65
 //#define DEBUG_APM_VFR_HUD                   // MSG #74
 //#define DEBUG_APM_STATUSTEXT                // MSG #254
@@ -208,6 +211,7 @@ int8_t      ap_battery_remaining  = 0;    // Remaining battery energy: (0%: 0, 1
  * *** Message #24  GPS_RAW_INT                        ***
  * *******************************************************
  */
+time_t      ap_gps_time_unix_utc  =   0;    // Timestamp (microseconds since UNIX epoch) in UTC.
 uint8_t     ap_fixtype            =   0;    // 0 = No GPS, 1 = No Fix, 2 = 2D Fix, 3 = 3D Fix, 4 = DGPS, 5 = RTK.
                                             // Some applications will not use the value of this field unless it is at least two,
                                             // so always correctly fill in the fix.
@@ -243,32 +247,21 @@ int32_t      ap_relative_alt      = 0;      // Relative Altitude (cm)
 
 /*
  * *******************************************************
- * *** Message #63  GLOBAL_POSITION_INT_COV            ***
- * *** Needed for Date/Time submission to RC           ***
- * *******************************************************
- */
-time_t      ap_gps_time_unix_utc  = 0;      // Timestamp (microseconds since UNIX epoch) in UTC.
-                                            // 0 for unknown.
-                                            // Commonly filled by the precision time source of a GPS receiver.
-
-/*
- * *******************************************************
  * *** Message #65  RC_CHANNELS                        ***
  * *** Needed for Mavlink RSSI                         ***
  * *******************************************************
  */
 #ifdef USE_RC_CHANNELS
-uint8_t     ap_chancount          = 0;      // Total number of RC channels being received.
+  uint8_t     ap_chancount          = 0;    // Total number of RC channels being received.
                                             // This can be larger than 18, indicating that more channels are available but
                                             // not given in this message. This value should be 0 when no RC channels are available.
-uint16_t    ap_chan_raw[18]       = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // RC channel x input value, in microseconds.
-                                                                            // A value of UINT16_MAX (65535U) implies the channel is unused.
+  uint16_t    ap_chan_raw[18]       = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};  // RC channel x input value, in microseconds.
+                                                                              // A value of UINT16_MAX (65535U) implies the channel is unused.
 #endif
 
 #ifdef USE_MAV_RSSI
-uint8_t    ap_rssi               = 0;
+  uint8_t    ap_rssi               = 0;
 #endif
-
 
 /*
  * *******************************************************
@@ -282,7 +275,6 @@ uint16_t    ap_throttle           = 0;    // Current throttle setting in integer
 // FrSky Taranis uses the first recieved value after 'PowerOn' or  'Telemetry Reset'  as zero altitude
 float     ap_bar_altitude       = 0;    // 100 = 1m
 float     ap_climb_rate         = 0;    // 100 = 1m/s
-
 
 /*
  * *******************************************************
@@ -306,15 +298,13 @@ mavlink_statustext_t statustext;
   MAV_SEVERITY_ENUM_END=8,
 */
 
-
 /*
  * *******************************************************
  * *** These are special for FrSky:                    ***
  * *******************************************************
  */
 
-int32_t     gps_status            = 0;    // (ap_sat_visible * 10) + ap_fixtype
-                                          // ex. 83 = 8 sattelites visible, 3D lock
+int32_t     gps_status            = 0;    // (ap_sat_visible * 10) + ap_fixtype eg. 83 = 8 sattelites visible, 3D lock
 uint8_t     ap_cell_count         = 0;
 
 /*

@@ -9,6 +9,9 @@
  *    (2015) Michael Wolkstein
  *    https://github.com/wolkstein/MavLink_FrSkySPort
  *
+ *    (2016) Paul Atherton
+ *    https://github.com/wolkstein/MavLink_FrSkySPort
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3 of the License, or
