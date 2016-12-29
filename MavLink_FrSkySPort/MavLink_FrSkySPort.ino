@@ -116,7 +116,8 @@
 #define _MavLinkSerial      Serial2
 #define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk directly
 #define START               1
-#define MSG_RATE            10      // Hertz
+#define MSG_RATE            5       // Hertz
+#define MSG_RATE_POS        2       // Hertz
 #define AP_SYSID            1       // autopilot system id
 #define AP_CMPID            1       // autopilot component id
 #define MY_SYSID            123     // teensy system id

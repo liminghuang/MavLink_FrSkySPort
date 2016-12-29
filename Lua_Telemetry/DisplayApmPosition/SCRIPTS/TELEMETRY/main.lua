@@ -46,7 +46,6 @@
 	local apmarmed = 0
   local	WavSfx
 	local FmodeNr
-	local last_flight_mode = 1
 	local last_apm_message_played = 0
 	local mult = 0
 	local consumption = 0
@@ -329,10 +328,8 @@ end
 		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
 		if apmarmed==1 then
 			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS)
---			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS)
 		else
 			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS+BLINK)
---			lcd.drawText(1, 0, (FlightMode[FmodeNr]), INVERS+BLINK)
 		end
 		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
