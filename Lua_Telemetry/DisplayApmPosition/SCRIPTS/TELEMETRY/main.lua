@@ -40,12 +40,11 @@
 --
 
 --Init Variables
---  local APType = 1  -- ArduPilot firmware: 1 = copter, 2 = plane
-  local SumFlight = 0
 	local lastarmed = 0
 	local apmarmed = 0
   local	WavSfx
 	local FmodeNr
+	local last_flight_mode = 1 -- Init as 1 to match no initial telem
 	local last_apm_message_played = 0
 	local mult = 0
 	local consumption = 0
@@ -60,7 +59,6 @@
 	local radarytmp = 0
 	local hdop = 0
 	local watthours = 0
-	local lastconsumption = 0
 	local localtime = 0
 	local oldlocaltime= 0
 	local localtimetwo = 0
@@ -75,13 +73,11 @@
 	local status_severity = 0
 	local status_textnr = 0
 	local hypdist = 0
-	local battWhmax = 0
 	local whconsumed = 0
-	local batteryreachmaxWH = 0
   local isotx22 = false
+  local altMax = 0
 
 	-- Temporary text attribute
-	local FORCE = 0x02 -- draw ??? line or rectangle
 	local X1 = 0
 	local Y1 = 0
 	local X2 = 0
@@ -93,7 +89,8 @@
 	local CenterYrowArrow = 41
 	local offsetX = 0
 	local offsetY = 0
-	local htsapaneloffset = 11
+  local scrW = 212 -- width of Taranis screen
+  local scrH = 63 -- height of Taranis screen
 	local divtmp = 1
 	local upppp = 20480
 	local divvv = 2048 --12 mal teilen
@@ -102,12 +99,6 @@
 	local gpsLatLon = {}
 	local LocationLat = 0
 	local LocationLon = 0
-
---Timer 0 is time while vehicle is armed
-	model.setTimer(0, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=true, persistent=1})
-
---Timer 1 is accumulated time per flight mode
-	--model.setTimer(1, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=false, persistent=1})
 
 --Init Flight Tables
 
@@ -159,21 +150,54 @@
 		{4, 5, 0, -4}
 	}
 
--- OpenTx 2.2 checker function
-local function is22()
-  local ver, radio, maj, minor, rev = getVersion()
-  if maj == 2 and minor == 2 then isotx22 = true end
-end
+-- Set defaults if not already set by offset.lua mixer script
+  local function checkGlobals()
+    if gSpeed_multi == nil then gSpeed_multi = 3.6; gSpeed_units = "kph" end
+    if gAlt_multi == nil then gAlt_multi = 1; gAlt_units = "m" end
+    if gOffsetmah == nil then gOffsetmah = 0 end
+    if gOffsetwatth == nil then gOffsetwatth = 0 end
+    if gBatcapwh == nil then gBatcapwh = 30 end
+    if gAPType == nil then gAPType = 1 end
+  end
 
--- Telemetry helper function
-  local function getTelemetryId(name)
-    field = getFieldInfo(name)
-    if field then
-    	return field.id
+-- OpenTx 2.2 checker function
+  local function is22()
+    local ver, radio, maj, minor, rev = getVersion()
+    if maj == 2 and minor == 2 then isotx22 = true end
+  end
+
+--Init Timer 0 - runs while vehicle is armed
+  local function setupTimers()
+  	model.setTimer(0, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=true, persistent=1})
+    if model.getTimer(1).persistent == 2 and model.getTimer(1).start == 0 and model.getTimer(1).value>0 then -- assume already exists
+      model.setTimer(1, {mode=0, start=0, value=model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2})
     else
-    	return -1
-   	end
-	end
+      model.setTimer(1, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=false, persistent=2})
+    end
+  end
+
+  --FlightModes
+  	local function Flight_modes()
+  	  if gAPType == 1 then
+  	    WavSfx = "A"
+  	    FmodeNr = 13  -- This is an invalid flight number for Copter when no data available
+  	  else
+  	    WavSfx = "P"
+  	    FmodeNr = 10  -- This is an invalid flight number for Plane when no data available
+  	  end
+  		FmodeNr = getValue("Fuel")+1
+  		if FmodeNr<1 or FmodeNr>#FlightMode[gAPType] then
+  			if gAPType == 1 then
+  			  FmodeNr=13
+  			else
+  			  FmodeNr=10
+  			end
+  		end
+  		if FmodeNr~=last_flight_mode then
+  			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
+  			last_flight_mode=FmodeNr
+  		end
+  	end
 
 -- draw arrow
 	local function drawArrow()
@@ -199,7 +223,7 @@ end
 			whconsumed = gBatcapwh
 		end
 		lcd.drawFilledRectangle(76,9,8,55,INVERS)
-		lcd.drawFilledRectangle(77,9,7, (whconsumed - 0)* ( 55 - 0 ) / (gBatcapwh - 0) + 0, 0)
+		lcd.drawFilledRectangle(77,9,6, (whconsumed - 0)* ( 55 - 0 ) / (gBatcapwh - 0) + 0, 0)
 	end
 
 --Aux Display functions and panels
@@ -287,18 +311,23 @@ end
 
 -- Altitude Panel
 	local function htsapanel()
-		lcd.drawLine (htsapaneloffset+154,8,htsapaneloffset+154, 63,SOLID,0)
+    local altNow = 0
+		lcd.drawLine (scrW-47,9,scrW-47,scrH,SOLID,0)
 		--Heading & Alt headers
-		lcd.drawText(htsapaneloffset+74,10,"Alt",SMLSIZE)
-		lcd.drawText(htsapaneloffset+114,10,"Hdg ",SMLSIZE)
-		lcd.drawLine(htsapaneloffset+112,30,htsapaneloffset+153,30,DOTTED,0)
-		lcd.drawLine(htsapaneloffset+73,40,htsapaneloffset+153,40,DOTTED,0)
-		lcd.drawLine(htsapaneloffset+112,9,htsapaneloffset+112,29,DOTTED,0)
+		lcd.drawText(85,10,"Alt",SMLSIZE)
+		lcd.drawText(125,10,"Hdg ",SMLSIZE)
+		lcd.drawLine(123,30,164,30,DOTTED,0)
+		lcd.drawLine(84,40,164,40,DOTTED,0)
+		lcd.drawLine(123,9,123,29,DOTTED,0)
     --Alt
-		lcd.drawNumber(htsapaneloffset+76,18,getValue("Alt")*gAlt_multi,MIDSIZE+LEFT)
+    altNow = getValue("Alt")
+    lcd.drawNumber(87,18,altNow*gAlt_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),23,gAlt_units,SMLSIZE)
+    if altNow > altMax then
+      altMax = altNow
+    end
 		--Heading
-		lcd.drawNumber(htsapaneloffset+116,18,getValue("Hdg"),MIDSIZE+LEFT)
+		lcd.drawNumber(127,18,getValue("Hdg"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),18,"\64",MIDSIZE)
 		--vspeed
 		vspd= getValue("VSpd")
@@ -308,24 +337,25 @@ end
 			lcd.drawText(87,32,"++",0+SMLSIZE)
 		elseif vspd <0 then
 			lcd.drawText(88,32,"--",0+SMLSIZE)
+      vspd = -vspd
 		end
 		lcd.drawNumber(99,32,vspd*gAlt_multi,0+SMLSIZE+LEFT)
     lcd.drawText(lcd.getLastPos(),32,gAlt_units .. "/s",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM")*gAlt_multi,SMLSIZE+LEFT)
+		lcd.drawNumber(128,32,altMax*gAlt_multi,SMLSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),32,gAlt_units .. " max",SMLSIZE)
 
-		lcd.drawText(htsapaneloffset+74,43,"GSpd",SMLSIZE)
-		lcd.drawText(htsapaneloffset+114,43,"ASpd",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 76,51,getValue("GSpd")*gSpeed_multi,MIDSIZE+LEFT)
+		lcd.drawText(85,43,"GSpd",SMLSIZE)
+		lcd.drawText(125,43,"ASpd",SMLSIZE)
+		lcd.drawNumber(87,51,getValue("GSpd")*gSpeed_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),56,gSpeed_units,SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 116,51,getValue("ASpd")*gSpeed_multi,MIDSIZE+LEFT)
+		lcd.drawNumber(127,51,getValue("ASpd")*gSpeed_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),56,gSpeed_units,SMLSIZE)
 
 	end
 
 -- Top Panel
 	local function toppanel()
-		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
+		lcd.drawFilledRectangle(0, 0, scrW, 9, 0)
 		if apmarmed==1 then
 			lcd.drawText(1, 0, (FlightMode[gAPType][FmodeNr]), INVERS)
 		else
@@ -334,14 +364,19 @@ end
 		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
 		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS+SMLSIZE)
-		if getValue("A4")==0 then
-			dispTxt="rx-rssi:" .. tostring(math.ceil(getValue("A3")))
-      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
-		else
-			dispTxt="rssi:" .. tostring(getValue("RSSI"))
-      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
-		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
-		end
+    if getValue("A3")>0 or getValue("RSSI") >0 then -- check if any RSSI
+      if getValue("A4")==0 then -- using Mavlink RSSI
+			  dispTxt="rx-rssi:" .. tostring(math.ceil(getValue("A3")))
+        lcd.drawText(scrW-1-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		  else -- using regular FrSky RSSI
+        dispTxt="rssi:" .. tostring(getValue("RSSI"))
+        lcd.drawText(scrW-1-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		    lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		  end
+    else
+      dispTxt="rssi:n/a"
+      lcd.drawText(scrW-2-string.len(dispTxt)*5.1, 0, dispTxt , INVERS+BLINK)
+    end
 	end
 
 --Power Panel
@@ -419,22 +454,21 @@ end
 				LocationLon = gpsLatLon["lon"]
 			end
 		end
-		if apmarmed ~=1 then -- report last heading bevor arming. this can used for display position relative to copter
-			prearmheading=getValue("Hdg")
+		if apmarmed ~=1 then -- heading/position before arming. Used for radar once armed
+      prearmheading=getValue("Hdg")
 			pilotlat = math.rad(LocationLat)
 			pilotlon = math.rad(LocationLon)
 		end
 		if lastarmed~=apmarmed then
 			lastarmed=apmarmed
 			if apmarmed==1 then
-				model.setTimer(0,{ mode=1, start=0, value=SumFlight, countdownBeep=0, minuteBeep=true, persistent=1 })
-				model.setTimer(1,{ mode=1, start=0, value=PersitentSumFlight, countdownBeep=0, minuteBeep=false, persistent=2 })
+				model.setTimer(0,{ mode=1}) --, start=0, value=model.getTimer(0).value, countdownBeep=0, minuteBeep=true, persistent=1 })
+				model.setTimer(1,{ mode=1}) --, start=0, value =model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2 })
 				playFile("/SOUNDS/en/TELEM/SARM.wav")
 				playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
 			else
-				SumFlight = model.getTimer(0).value
-				model.setTimer(0,{ mode=0, start=0, value=model.getTimer(0).value, countdownBeep=0, minuteBeep=true, persistent=1 })
-				model.setTimer(1,{ mode=0, start=0, value=model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2 })
+				model.setTimer(0,{ mode=0}) --, start=0, value=model.getTimer(0).value, countdownBeep=0, minuteBeep=true, persistent=1 })
+				model.setTimer(1,{ mode=0}) --, start=0, value=model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2 })
 				playFile("/SOUNDS/en/TELEM/SDISAR.wav")
 			end
 		end
@@ -464,29 +498,6 @@ end
 		end
 	end
 
---FlightModes
-	local function Flight_modes()
-	  if gAPType == 1 then
-	    WavSfx = "A"
-	    FmodeNr = 13  -- This is an invalid flight number for Copter when no data available
-	  else
-	    WavSfx = "P"
-	    FmodeNr = 10  -- This is an invalid flight number for Plane when no data available
-	  end
-		FmodeNr = getValue("Fuel")+1
-		if FmodeNr<1 or FmodeNr>#FlightMode[gAPType] then
-			if gAPType == 1 then
-			  FmodeNr=13
-			else
-			  FmodeNr=10
-			end
-		end
-		if FmodeNr~=last_flight_mode then
-			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
-			last_flight_mode=FmodeNr
-		end
-	end
-
 -- play alarm wh reach maximum level
 	local function playMaxWhReached()
 		if gBatcapwh > 0 and (watthours + watthours*gOffsetwatth/100) >= gBatcapwh then
@@ -499,19 +510,12 @@ end
 		end
 	end
 
-  local function checkGlobals()
-    if gSpeed_multi == nil then gSpeed_multi = 3.6; gSpeed_units = "kph" end
-    if gAlt_multi == nil then gAlt_multi = 1; gAlt_units = "m" end
-    if gOffsetmah == nil then gOffsetmah = 0 end
-    if gOffsetwatth == nil then gOffsetwatth = 0 end
-    if gBatcapwh == nil then gBatcapwh = 30 end
-    if gAPType == nil then gAPType = 1 end
-  end
-
 --Init
 	local function init()
 		checkGlobals()
     is22()
+    setupTimers()
+    Flight_modes()
 	end
 
 --Background
