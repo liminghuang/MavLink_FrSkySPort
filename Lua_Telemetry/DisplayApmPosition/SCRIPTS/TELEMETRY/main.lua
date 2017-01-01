@@ -71,7 +71,6 @@
       for i in pairs(tab_name) do
         tab_name[i] = nil
       end
-      print("garbage collection: ", collectgarbage("count"))
     end
   end
 
@@ -202,9 +201,6 @@
 local function init()
   loadfile("/SCRIPTS/TELEMETRY/LIBRARY/maininit.lua")(shvars, remfuncs)
   remfuncs.runInit()
-  for i, j in pairs(shvars) do
-    print("from main:", i, j)
-  end
   clearTable(remfuncs)
   initRun = true
 end

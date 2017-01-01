@@ -67,8 +67,6 @@
           shvars[i] = j
         end
       end
-    else
-      print("**************** no file exists **********************")
     end
   end
 
