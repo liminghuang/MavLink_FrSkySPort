@@ -2,7 +2,7 @@
 -- maininit.lua part of of MavLink_FrSkySPort
 --		https://github.com/Clooney82/MavLink_FrSkySPort
 --
--- created by Paul Atherton (c) 2016 
+-- created by Paul Atherton (c) 2016
 --	 https://github.com/Clooney82/MavLink_FrSkySPort
 --
 -- This program is free software; you can redistribute it and/or modify
@@ -18,20 +18,38 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program; if not, see <http://www.gnu.org/licenses>.
 
---initialise local vars
-local fieldMax = 5
-local speedUnitOpt = {"m/s","kph","mph"}
-local altUnitOpt = {"m","f"}
-local coptPlanOpt = {"Copter","Plane"}
-local activeField = 0
-local comboOptions
-local selectedOption
-local selectedSize
-local editMode
-local shvars, remfuncs = ...  -- Setup access to shared tables passed by main.lua
+-- initialise local vars
+	local fieldMax = 5
+	local speedUnitOpt = {"m/s","kph","mph"}
+	local altUnitOpt = {"m","f"}
+	local coptPlanOpt = {"Copter","Plane"}
+	local activeField = 0
+	local comboOptions
+	local selectedOption
+	local selectedSize
+	local editMode
+	local shvars, remfuncs = ...  -- Setup access to shared tables passed by main.lua
+
+-- write data to files
+  local function writeCfg()
+    local outdata = " return {"
+    outdata = outdata .. "[\"speedUnits\"] = " .. shvars.speedUnits .. ","
+    outdata = outdata .. "[\"altUnits\"] = "   .. shvars.altUnits   .. ","
+    outdata = outdata .. "[\"apType\"] = "     .. shvars.apType     .. ","
+    outdata = outdata .. "[\"offsetmah\"] = "  .. shvars.offsetmah  .. ","
+    outdata = outdata .. "[\"offsetwh\"] = "   .. shvars.offsetwh   .. ","
+    outdata = outdata .. "[\"whCap\"] = "      .. shvars.whCap      .. "}"
+    local modName = model.getInfo().name
+    local dataFile = "/SCRIPTS/TELEMETRY/DATA/" .. modName .. ".cfg"
+    local f = io.open(dataFile, "w")
+  	if f ~= nil then
+      io.write(f, outdata)
+      io.close(f)
+    end
+  end
 
 -- inc/dec edit of numeric fields
-local function valueIncDec(event,value,min,max,step)
+  local function valueIncDec(event,value,min,max,step)
     if editMode then
       if event==EVT_PLUS_FIRST or event==EVT_PLUS_REPT then
         if value<=max-step then
@@ -46,8 +64,8 @@ local function valueIncDec(event,value,min,max,step)
     return value
   end
 
--- move through values in combo boxes in edit mode and move between fields 
-local function fieldIncDec(event,value,max,force)
+-- move through values in combo boxes in edit mode and move between fields
+  local function fieldIncDec(event,value,max,force)
     if editMode or force==true then
       if event==EVT_PLUS_FIRST then
         value=value+max
@@ -72,67 +90,66 @@ local function fieldIncDec(event,value,max,force)
   end
 
 
-remfuncs.confRun = function(event)
-  lcd.clear()
-  -- draw from the bottom up so we don't overwrite the combo box if open
-  local xCoord = 4
-  local yCoord = 50
-  lcd.drawText(xCoord, yCoord, "Bat calib offset :", SMLSIZE)
+  remfuncs.runConf = function(event)
+    lcd.clear()
+    -- draw from the bottom up so we don't overwrite the combo box if open
+    local xCoord = 4
+    local yCoord = 50
+    lcd.drawText(xCoord, yCoord, "Bat calib offset :", SMLSIZE)
 
-  xCoord = lcd.getLastPos() + 4
-  lcd.drawRectangle(xCoord - 2, yCoord - 2, 18, 11)
-  lcd.drawText(xCoord, yCoord, shvars.offsetmah, getFieldFlags(3))
-  lcd.drawText(xCoord - 2, yCoord - 10, "mAh%", SMLSIZE)
+    xCoord = lcd.getLastPos() + 4
+    lcd.drawRectangle(xCoord - 2, yCoord - 2, 18, 11)
+    lcd.drawText(xCoord, yCoord, shvars.offsetmah, getFieldFlags(3))
+    lcd.drawText(xCoord - 2, yCoord - 10, "mAh%", SMLSIZE)
 
-  xCoord = lcd.getLastPos() + 6
-  lcd.drawRectangle(xCoord - 2, yCoord - 2, 18, 11)
-  lcd.drawText(xCoord, yCoord, shvars.offsetwh, getFieldFlags(4))
-  lcd.drawText(xCoord - 1, yCoord - 10, "Wh%", SMLSIZE)
+    xCoord = lcd.getLastPos() + 6
+    lcd.drawRectangle(xCoord - 2, yCoord - 2, 18, 11)
+    lcd.drawText(xCoord, yCoord, shvars.offsetwh, getFieldFlags(4))
+    lcd.drawText(xCoord - 1, yCoord - 10, "Wh%", SMLSIZE)
 
-  xCoord = lcd.getLastPos() + 2
-  lcd.drawText(xCoord + 6, yCoord, "Bat Cap :", SMLSIZE)
+    xCoord = lcd.getLastPos() + 2
+    lcd.drawText(xCoord + 6, yCoord, "Bat Cap :", SMLSIZE)
 
-  xCoord = lcd.getLastPos() - 2
-  lcd.drawRectangle(xCoord +4, yCoord - 2, 18, 11)
-  lcd.drawText(xCoord + 6, yCoord, shvars.whCap, getFieldFlags(5))
-  lcd.drawText(xCoord + 6, yCoord - 10, "Wh", SMLSIZE)
+    xCoord = lcd.getLastPos() - 2
+    lcd.drawRectangle(xCoord +4, yCoord - 2, 18, 11)
+    lcd.drawText(xCoord + 6, yCoord, shvars.whCap, getFieldFlags(5))
+    lcd.drawText(xCoord + 6, yCoord - 10, "Wh", SMLSIZE)
 
-  lcd.drawFilledRectangle(0,0,212,10)
-  lcd.drawText(1, 1, "Telemetry Script Configuration",INVERS)
+    lcd.drawFilledRectangle(0,0,212,10)
+    lcd.drawText(1, 1, "Telemetry Script Configuration",INVERS)
 
-  xCoord = 14
-  yCoord = 22
-  lcd.drawText(xCoord - 8, yCoord - 10, "Speed Units:", SMLSIZE)
-  lcd.drawCombobox(xCoord, yCoord, 40, speedUnitOpt, shvars.speedUnits, getFieldFlags(0))
+    xCoord = 14
+    yCoord = 22
+    lcd.drawText(xCoord - 8, yCoord - 10, "Speed Units:", SMLSIZE)
+    lcd.drawCombobox(xCoord, yCoord, 40, speedUnitOpt, shvars.speedUnits, getFieldFlags(0))
 
-  xCoord = 86
-  lcd.drawText(xCoord - 8, yCoord - 10, "Alt Units:", SMLSIZE)
-  lcd.drawCombobox(xCoord, yCoord, 30, altUnitOpt, shvars.altUnits, getFieldFlags(1))
+    xCoord = 86
+    lcd.drawText(xCoord - 8, yCoord - 10, "Alt Units:", SMLSIZE)
+    lcd.drawCombobox(xCoord, yCoord, 30, altUnitOpt, shvars.altUnits, getFieldFlags(1))
 
-  xCoord = 146
-  lcd.drawText(xCoord - 6, yCoord - 10, "Copter/Plane:", SMLSIZE)
-  lcd.drawCombobox(xCoord, yCoord, 50, coptPlanOpt, shvars.apType, getFieldFlags(2))
+    xCoord = 146
+    lcd.drawText(xCoord - 6, yCoord - 10, "Copter/Plane:", SMLSIZE)
+    lcd.drawCombobox(xCoord, yCoord, 50, coptPlanOpt, shvars.apType, getFieldFlags(2))
 
-  if event == EVT_ENTER_BREAK then
-    editMode = not editMode
-  end
-  if editMode then
-    if activeField == 0 then
-      shvars.speedUnits = fieldIncDec(event, shvars.speedUnits, 2)
-    elseif activeField == 1 then
-      shvars.altUnits = fieldIncDec(event, shvars.altUnits, 1)
-    elseif activeField == 2 then
-      shvars.apType = fieldIncDec(event, shvars.apType, 1)
-    elseif activeField == 3 then
-      shvars.offsetmah = valueIncDec(event, shvars.offsetmah, -30, 30, 1)
-    elseif activeField == 4 then
-      shvars.offsetwh = valueIncDec(event, shvars.offsetwh, -30, 30, 1)
-    elseif activeField == 5 then
-      shvars.whCap = valueIncDec(event, shvars.whCap, 0, 250, 1)
+    if event == EVT_ENTER_BREAK then
+      editMode = not editMode
     end
-  else
-    activeField = fieldIncDec(event, activeField, fieldMax, true)
+    if editMode then
+      if activeField == 0 then
+        shvars.speedUnits = fieldIncDec(event, shvars.speedUnits, 2)
+      elseif activeField == 1 then
+        shvars.altUnits = fieldIncDec(event, shvars.altUnits, 1)
+      elseif activeField == 2 then
+        shvars.apType = fieldIncDec(event, shvars.apType, 1)
+      elseif activeField == 3 then
+        shvars.offsetmah = valueIncDec(event, shvars.offsetmah, -30, 30, 1)
+      elseif activeField == 4 then
+        shvars.offsetwh = valueIncDec(event, shvars.offsetwh, -30, 30, 1)
+      elseif activeField == 5 then
+        shvars.whCap = valueIncDec(event, shvars.whCap, 0, 250, 1)
+      end
+      writeCfg()
+    else
+      activeField = fieldIncDec(event, activeField, fieldMax, true)
+    end
   end
-end
-
-

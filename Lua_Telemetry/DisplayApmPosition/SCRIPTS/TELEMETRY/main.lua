@@ -40,11 +40,11 @@
 
 --Init Local Variables
   local SumFlight = 0
-	local lastarmed = 0
-	local apmarmed = 0
+	local lastArmed = 0
+	local apmArmed = 0
   local	WavSfx
 	local FmodeNr
-	local last_flight_mode = 1
+	local last_flight_mode = "init"
 	local last_apm_message_played = 0
 	local t2 = 0
 	local localtime = 0
@@ -54,81 +54,38 @@
 	local status_severity = 0
 	local status_textnr = 0
   local isrunning_main = false
+  local initRun = false
 	local gpsLatLon = {}
---Init Flight Tables
-  local flightMode = {{
-		"Stabilize",
-		"Acro",
-		"Altitude Hold",
-		"Auto",
-		"Guided",
-		"Loiter",
-		"Return to launch",
-		"Circle",
-		"Invalid Mode",
-		"Land",
-		"Optical Loiter",
-		"Drift",
-		"Invalid Mode",
-		"Sport",
-		"Flip Mode",
-		"Auto Tune",
-		"Position Hold",
-		"Brake"
-  },
-  {
-		"Manual",
-		"Circle",
-		"Stabilize",
-		"Training",
-		"Acro",
-		"Fly By Wire A",
-		"Fly By Wire B",
-		"Cruise",
-		"Auto Tune",
-		"Invalid Mode",
-		"Auto",
-		"Return to launch",
-		"Loiter",
-		"Invalid Mode",
-		"Invalid Mode",
-		"Guided"
-  }}
-  local shvars = {  --Init shared variables table
-    prearmheading = 0,
-    watthours = 0,
-    LocationLat = 0,
-    LocationLon = 0,
-    pilotlat = 0,
-    pilotlon = 0,
-    is22 = false,
-    speedUnits = 1,
-    altUnits = 0,
-    apType= 0,
-    offsetmah = 0,
-    offsetwh = 0,
-    whCap = 0
-  }
+  local flightMode = {}
+  local shvars = {} -- Init shared variables table
   local remfuncs = {}  --Init remote functions table
+  local apTypeOrig = 99 --Init to invalid value so FM run first time
 	local apm_status_message = {severity = 0, textnr = 0, timestamp=0}  --Init status message table
   local req_mainscr = true
   local scr_loaded = ""
-  
-  
-  
---Setup Timer 0 - time while vehicle is armed
-	model.setTimer(0, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=true, persistent=1})
+
 
 --Clear table contents
   local function clearTable(tab_name)
-    for i in pairs(tab_name) do
-      tab_name[i] = nil
+    if next(tab_name) ~= nil then
+      for i in pairs(tab_name) do
+        tab_name[i] = nil
+      end
+      print("garbage collection: ", collectgarbage("count"))
     end
-    collectgarbage()
+  end
+
+--Load flight modes
+  local function loadFModTab()
+    if shvars.apType ~= apTypeOrig then
+      clearTable(flightMode)
+      flightMode = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/fmodes.lua")(shvars.apType)
+      apTypeOrig = shvars.apType
+    end
   end
 
 ------------------------------------------------
--- Background functions - always in use so 
+-- Background functions - always in use so
 -- located permanently here in main
 ------------------------------------------------
 
@@ -146,7 +103,7 @@
 --APM Armed and errors
 	local function armed_status()
 		t2 = getValue("Tmp2")
-		apmarmed = t2%0x02
+		apmArmed = t2%0x02
 		gpsLatLon = getValue("GPS")
 		if (type(gpsLatLon) == "table") then
 			if gpsLatLon["lat"] ~= NIL then
@@ -156,26 +113,25 @@
 				shvars.LocationLon = gpsLatLon["lon"]
 			end
 		end
-		if apmarmed ~=1 then -- report last heading bevor arming. this can used for display position relative to copter
+		if apmArmed ~=1 then -- record heading and location before arming for radar home
 			shvars.prearmheading=getValue("Hdg")
 			shvars.pilotlat = math.rad(shvars.LocationLat)
 			shvars.pilotlon = math.rad(shvars.LocationLon)
 		end
-		if lastarmed~=apmarmed then
-			lastarmed=apmarmed
-			if apmarmed==1 then
-				model.setTimer(0,{ mode=1, start=0, value=SumFlight, countdownBeep=0, minuteBeep=true, persistent=1 })
-				model.setTimer(1,{ mode=1, start=0, value=PersitentSumFlight, countdownBeep=0, minuteBeep=false, persistent=2 })
+    if lastArmed~=apmArmed then
+			lastArmed=apmArmed
+			if apmArmed==1 then
+				model.setTimer(0,{mode=1})
+				model.setTimer(1,{mode=1})
 				playFile("/SOUNDS/en/TELEM/SARM.wav")
 				playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
 			else
-				SumFlight = model.getTimer(0).value
-				model.setTimer(0,{ mode=0, start=0, value=model.getTimer(0).value, countdownBeep=0, minuteBeep=true, persistent=1 })
-				model.setTimer(1,{ mode=0, start=0, value=model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2 })
+				model.setTimer(0,{mode=0})
+				model.setTimer(1,{mode=0})
 				playFile("/SOUNDS/en/TELEM/SDISAR.wav")
 			end
 		end
-		t2 = (t2-apmarmed)/0x02
+		t2 = (t2-apmArmed)/0x02
 		status_severity = t2%0x10
 		t2 = (t2-status_severity)/0x10
 		status_textnr = t2%0x400
@@ -203,22 +159,27 @@
 
 --FlightModes
 	local function Flight_modes()
-	  if shvars.apType == 1 then
+    loadFModTab() --only reloads if apType has changed in config screen
+    if shvars.apType == 0 then
 	    WavSfx = "A"
 	  else
 	    WavSfx = "P"
 	  end
 		FmodeNr = getValue("Fuel")+1
-		if FmodeNr<1 or FmodeNr>#flightMode[shvars.apType+1] then
-			if shvars.apType == 1 then
+		if FmodeNr<1 or FmodeNr>#flightMode then
+			if shvars.apType == 0 then
 			  FmodeNr=13 -- This is an invalid flight number for Copter when no data available
 			else
 			  FmodeNr=10 -- This is an invalid flight number for Plane when no data available
 			end
 		end
-		if FmodeNr~=last_flight_mode then
-			playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
-			last_flight_mode=FmodeNr
+		if last_flight_mode~=flightMode[FmodeNr] then
+      if last_flight_mode == "init" then
+        last_flight_mode=flightMode[FmodeNr]
+      else
+			  playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
+        last_flight_mode=flightMode[FmodeNr]
+      end
 		end
 	end
 
@@ -238,19 +199,21 @@
 ------------------------------------------------
 --Init
 ------------------------------------------------
-	local function init()
-    --loadfile("/SCRIPTS/TELEMETRY/LIBRARY/maininit.lua")(shvars, remfuncs)
-    --remfuncs.mainInit()
-    --clearTable(remfuncs)
-	  -- Local OpenTx 2.2 checker function
-    local ver, radio, maj, minor, rev = getVersion()
-    shvars.is22 = maj == 2 and minor == 2
+local function init()
+  loadfile("/SCRIPTS/TELEMETRY/LIBRARY/maininit.lua")(shvars, remfuncs)
+  remfuncs.runInit()
+  for i, j in pairs(shvars) do
+    print("from main:", i, j)
   end
+  clearTable(remfuncs)
+  initRun = true
+end
 
 ------------------------------------------------
 --Background
 ------------------------------------------------
 	local function background()
+    if not initRun then init() end
 		armed_status()
 		Flight_modes()
 		calcWattHs()
@@ -270,18 +233,18 @@
         loadfile("/SCRIPTS/TELEMETRY/LIBRARY/mainrun.lua")(shvars, remfuncs)
         scr_loaded = "mainrun"
       end
-      remfuncs.mainRun(flightMode[shvars.apType+1][FmodeNr])
+      remfuncs.runMain(flightMode[FmodeNr], apmArmed)
     else
       if scr_loaded ~= "confrun" then
         clearTable(remfuncs)
         loadfile("/SCRIPTS/TELEMETRY/LIBRARY/confrun.lua")(shvars, remfuncs)
         scr_loaded = "confrun"
       end
-      remfuncs.confRun(event)
+      remfuncs.runConf(event)
     end
   end
 
-	return {init=init, run=run, background=background}
+	return {run=run, background=background}
 ------------------------------------------------
 --End of file
 ------------------------------------------------

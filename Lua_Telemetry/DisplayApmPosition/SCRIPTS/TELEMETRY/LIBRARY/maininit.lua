@@ -2,7 +2,7 @@
 -- maininit.lua part of of MavLink_FrSkySPort
 --		https://github.com/Clooney82/MavLink_FrSkySPort
 --
--- created by Paul Atherton (c) 2016 
+-- created by Paul Atherton (c) 2016
 --	 https://github.com/Clooney82/MavLink_FrSkySPort
 --
 -- This program is free software; you can redistribute it and/or modify
@@ -18,26 +18,63 @@
 -- You should have received a copy of the GNU General Public License
 -- along with this program; if not, see <http://www.gnu.org/licenses>.
 
--- Setup shared tables
+  -- Setup shared tables
   local shvars, remfuncs = ...
 
---  check if globals are set and if not set defaults
---  local function checkGlobals()
---    if gSpeed_multi == nil then gSpeed_multi = 3.6; gSpeed_units = "kph" end
---    if gAlt_multi == nil then gAlt_multi = 1; gAlt_units = "m" end
---    if gOffsetmah == nil then gOffsetmah = 0 end
---    if gOffsetwatth == nil then gOffsetwatth = 0 end
---    if gBatcapwh == nil then gBatcapwh = 30 end
---    if gAPType == nil then gAPType = 1 end
---  end
-  
+  -- Initalise shared variables
+  local function initShVars()
+    shvars.prearmheading = 0
+    shvars.watthours = 0
+    shvars.LocationLat = 0
+    shvars.LocationLon = 0
+    shvars.pilotlat = 0
+    shvars.pilotlon = 0
+    shvars.is22 = false
+    shvars.speedUnits = 1
+    shvars.altUnits = 0
+    shvars.apType= 0
+    shvars.offsetmah = 0
+    shvars.offsetwh = 0
+    shvars.whCap = 0
+  end
+
   -- Local OpenTx 2.2 checker function
   local function is22()
     local ver, radio, maj, minor, rev = getVersion()
     shvars.is22 = maj == 2 and minor == 2
   end
-  
-  remfuncs.mainInit = function()
-    --checkGlobals()
+
+  --Init Timer 0 - runs while vehicle is armed
+  local function setupTimers()
+    model.setTimer(0, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=true, persistent=1})
+    if model.getTimer(1).persistent == 2 and model.getTimer(1).start == 0 and model.getTimer(1).value>0 then --if timer 2 already exists
+      model.setTimer(1, {mode=0, start=0, value=model.getTimer(1).value, countdownBeep=0, minuteBeep=false, persistent=2}) --keep existing value
+    else
+      model.setTimer(1, {mode=0, start=0, value=0, countdownBeep=0, minuteBeep=false, persistent=2}) --configure timer from scratch starting at 0
+    end
+  end
+
+  --Read configuration file if one exists
+  local function readCfg()
+    local cfgFile = "/SCRIPTS/TELEMETRY/DATA/" .. model.getInfo().name .. ".cfg"
+    local i, j
+    local f = io.open(cfgFile, "r")
+    if f ~= nil then
+  		io.close(f)
+      local cfgTab = loadfile(cfgFile)()
+      if cfgTab ~= nil then
+        for i, j in pairs(cfgTab) do
+          shvars[i] = j
+        end
+      end
+    else
+      print("**************** no file exists **********************")
+    end
+  end
+
+  remfuncs.runInit = function()
+    initShVars()
     is22()
+    setupTimers()
+    readCfg()
   end

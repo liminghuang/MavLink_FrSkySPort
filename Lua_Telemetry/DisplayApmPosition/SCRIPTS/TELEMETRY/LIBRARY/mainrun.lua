@@ -15,7 +15,7 @@
 --    https://github.com/Clooney82/MavLink_FrSkySPort
 --
 --   Recent changes include:
---   relocation of this code to mainrun.lua - allowing for unloading of 
+--   relocation of this code to mainrun.lua - allowing for unloading of
 --   the telemetry screen from memory to facilitate running of the options screen.
 --
 -- This program is free software; you can redistribute it and/or modify
@@ -42,6 +42,7 @@
   local dispTxt = ""
   local xposCons = 0
   local vspd = 0
+  local altMax = 0
   local radarx = 0
   local radary = 0
   local radarxtmp = 0
@@ -78,19 +79,20 @@
   local CenterYrowArrow = 41
   local offsetX = 0
   local offsetY = 0
-  local htsapaneloffset = 11
+  local scrW = 212 -- width of Taranis screen
+  local scrH = 63 -- height of Taranis screen
   local divtmp = 1
   local upppp = 20480
   local divvv = 2048 --12 mal teilen
-  
---------------------------  
+
+--------------------------
 -- Local support functions
 --------------------------
 	local function round(num, idp)
 		mult = 10^(idp or 0)
 		return math.floor(num * mult + 0.5) / mult
 	end
-  
+
 
 local function setUnits()
   if not units_set then
@@ -118,24 +120,29 @@ end
 --------------------------------------------------------------------------
 --Main run section functions made available to main.lua via remfuncs table
 --------------------------------------------------------------------------
-	local function toppanel(FMode)
-		lcd.drawFilledRectangle(0, 0, 212, 9, 0)
-		if apmarmed==1 then
-			lcd.drawText(1, 0, (FMode), INVERS)
+  local function toppanel(fMode, apmArmed)
+		lcd.drawFilledRectangle(0, 0, scrW, 9, 0)
+		if apmArmed==1 then
+			lcd.drawText(1, 0, fMode, INVERS)
 		else
-			lcd.drawText(1, 0, (FMode), INVERS+BLINK)
+			lcd.drawText(1, 0, fMode, INVERS+BLINK)
 		end
 		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
 		lcd.drawText(lcd.getLastPos(), 0, "v", INVERS+SMLSIZE)
-		if getValue("A4")==0 then
-			dispTxt="rx-rssi:" .. tostring(math.ceil(getValue("A3")))
-      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
-		else
-			dispTxt="rssi:" .. tostring(getValue("RSSI"))
-      lcd.drawText(212-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
-		  lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
-		end
+    if getValue("A3")>0 or getValue("RSSI") >0 then -- check if any RSSI
+      if getValue("A4")==0 then -- using Mavlink RSSI
+			  dispTxt="rx-rssi:" .. tostring(math.ceil(getValue("A3")))
+        lcd.drawText(scrW-1-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		  else -- using regular FrSky RSSI
+        dispTxt="rssi:" .. tostring(getValue("RSSI"))
+        lcd.drawText(scrW-1-string.len(dispTxt)*5.1, 0, dispTxt , INVERS)
+		    lcd.drawNumber(lcd.getLastPos()+2, 0, getValue("RSSI"),0+INVERS+LEFT)
+		  end
+    else
+      dispTxt="rssi:n/a"
+      lcd.drawText(scrW-2-string.len(dispTxt)*5.1, 0, dispTxt , INVERS+BLINK)
+    end
 	end
 
 
@@ -166,7 +173,7 @@ end
 		lcd.drawText(xposCons,29,"Ah",SMLSIZE)
 		lcd.drawNumber(1,38,getValue("Watt"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),42,"W",0)
-    
+
     if shvars.is22 then
       lcd.drawNumber(65,43,(shvars.watthours + (shvars.watthours*shvars.offsetwh/100))*10,SMLSIZE+PREC1+RIGHT)
     else
@@ -186,19 +193,24 @@ end
 	end
 
 
-	local function htsapanel()
-		lcd.drawLine (htsapaneloffset+154,8,htsapaneloffset+154, 63,SOLID,0)
+  local function htsapanel()
+    local altNow = 0
+		lcd.drawLine (scrW-47,9,scrW-47,scrH,SOLID,0)
 		--Heading & Alt headers
-		lcd.drawText(htsapaneloffset+74,10,"Alt",SMLSIZE)
-		lcd.drawText(htsapaneloffset+114,10,"Hdg ",SMLSIZE)
-		lcd.drawLine(htsapaneloffset+112,30,htsapaneloffset+153,30,DOTTED,0)
-		lcd.drawLine(htsapaneloffset+73,40,htsapaneloffset+153,40,DOTTED,0)
-		lcd.drawLine(htsapaneloffset+112,9,htsapaneloffset+112,29,DOTTED,0)
+		lcd.drawText(85,10,"Alt",SMLSIZE)
+		lcd.drawText(125,10,"Hdg ",SMLSIZE)
+		lcd.drawLine(123,30,164,30,DOTTED,0)
+		lcd.drawLine(84,40,164,40,DOTTED,0)
+		lcd.drawLine(123,9,123,29,DOTTED,0)
     --Alt
-		lcd.drawNumber(htsapaneloffset+76,18,getValue("Alt")*alt_multi,MIDSIZE+LEFT)
+    altNow = getValue("Alt")
+    lcd.drawNumber(87,18,altNow*alt_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),23,alt_units,SMLSIZE)
+    if altNow > altMax then
+      altMax = altNow
+    end
 		--Heading
-		lcd.drawNumber(htsapaneloffset+116,18,getValue("Hdg"),MIDSIZE+LEFT)
+		lcd.drawNumber(127,18,getValue("Hdg"),MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),18,"\64",MIDSIZE)
 		--vspeed
 		vspd= getValue("VSpd")
@@ -208,17 +220,18 @@ end
 			lcd.drawText(87,32,"++",0+SMLSIZE)
 		elseif vspd <0 then
 			lcd.drawText(88,32,"--",0+SMLSIZE)
+      vspd = -vspd
 		end
 		lcd.drawNumber(99,32,vspd*alt_multi,0+SMLSIZE+LEFT)
     lcd.drawText(lcd.getLastPos(),32,alt_units .. "/s",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset+117,32,getValue("AltM")*alt_multi,SMLSIZE+LEFT)
+		lcd.drawNumber(128,32,altMax*alt_multi,SMLSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),32,alt_units .. " max",SMLSIZE)
 
-		lcd.drawText(htsapaneloffset+74,43,"GSpd",SMLSIZE)
-		lcd.drawText(htsapaneloffset+114,43,"ASpd",SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 76,51,getValue("GSpd")*speed_multi,MIDSIZE+LEFT)
+		lcd.drawText(85,43,"GSpd",SMLSIZE)
+		lcd.drawText(125,43,"ASpd",SMLSIZE)
+		lcd.drawNumber(87,51,getValue("GSpd")*speed_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
-		lcd.drawNumber(htsapaneloffset + 116,51,getValue("ASpd")*speed_multi,MIDSIZE+LEFT)
+		lcd.drawNumber(127,51,getValue("ASpd")*speed_multi,MIDSIZE+LEFT)
 		lcd.drawText(lcd.getLastPos(),56,speed_units,SMLSIZE)
 
 	end
@@ -307,7 +320,7 @@ end
 			whconsumed = shvars.whCap
 		end
 		lcd.drawFilledRectangle(76,9,8,55,INVERS)
-    lcd.drawFilledRectangle(77,9,7,whconsumed*55/shvars.whCap, 0)
+    lcd.drawFilledRectangle(77,9,6,whconsumed*55/shvars.whCap, 0)
 	end
 
 
@@ -327,10 +340,10 @@ end
 		end
 	end
 
-remfuncs.mainRun = function(FMode)
+remfuncs.runMain = function(fMode, apmArmed)
   lcd.clear()
   setUnits()
-  toppanel(FMode)
+  toppanel(fMode, apmArmed)
   powerpanel()
   htsapanel()
   gpspanel()
