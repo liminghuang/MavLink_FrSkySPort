@@ -41,9 +41,7 @@
 --Init Local Variables
   local SumFlight = 0
 	local lastArmed = 0
-	local apmArmed = 0
   local	WavSfx
-	local FmodeNr
 	local last_flight_mode = "init"
 	local last_apm_message_played = 0
 	local t2 = 0
@@ -53,10 +51,8 @@
 	local oldlocaltimetwo= 0
 	local status_severity = 0
 	local status_textnr = 0
-  local isrunning_main = false
   local initRun = false
 	local gpsLatLon = {}
-  local flightMode = {}
   local shvars = {} -- Init shared variables table
   local remfuncs = {}  --Init remote functions table
   local apTypeOrig = 99 --Init to invalid value so FM run first time
@@ -64,21 +60,10 @@
   local req_mainscr = true
   local scr_loaded = ""
 
-
---Clear table contents
-  local function clearTable(tab_name)
-    if next(tab_name) ~= nil then
-      for i in pairs(tab_name) do
-        tab_name[i] = nil
-      end
-    end
-  end
-
 --Load flight modes
   local function loadFModTab()
     if shvars.apType ~= apTypeOrig then
-      clearTable(flightMode)
-      flightMode = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/fmodes.lua")(shvars.apType)
+      shvars.flightMode = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/fmodes.lib")(shvars.apType)
       apTypeOrig = shvars.apType
     end
   end
@@ -102,7 +87,7 @@
 --APM Armed and errors
 	local function armed_status()
 		t2 = getValue("Tmp2")
-		apmArmed = t2%0x02
+		shvars.apmArmed = t2%0x02
 		gpsLatLon = getValue("GPS")
 		if (type(gpsLatLon) == "table") then
 			if gpsLatLon["lat"] ~= NIL then
@@ -112,25 +97,25 @@
 				shvars.LocationLon = gpsLatLon["lon"]
 			end
 		end
-		if apmArmed ~=1 then -- record heading and location before arming for radar home
+		if shvars.apmArmed ~=1 then -- record heading and location before arming for radar home
 			shvars.prearmheading=getValue("Hdg")
 			shvars.pilotlat = math.rad(shvars.LocationLat)
 			shvars.pilotlon = math.rad(shvars.LocationLon)
 		end
-    if lastArmed~=apmArmed then
-			lastArmed=apmArmed
-			if apmArmed==1 then
+    if lastArmed~=shvars.apmArmed then
+			lastArmed=shvars.apmArmed
+			if shvars.apmArmed==1 then
 				model.setTimer(0,{mode=1})
 				model.setTimer(1,{mode=1})
 				playFile("/SOUNDS/en/TELEM/SARM.wav")
-				playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
+				playFile("/SOUNDS/en/TELEM/AVFM"..(shvars.FmodeNr-1)..WavSfx..".wav")
 			else
 				model.setTimer(0,{mode=0})
 				model.setTimer(1,{mode=0})
 				playFile("/SOUNDS/en/TELEM/SDISAR.wav")
 			end
 		end
-		t2 = (t2-apmArmed)/0x02
+		t2 = (t2-shvars.apmArmed)/0x02
 		status_severity = t2%0x10
 		t2 = (t2-status_severity)/0x10
 		status_textnr = t2%0x400
@@ -164,20 +149,20 @@
 	  else
 	    WavSfx = "P"
 	  end
-		FmodeNr = getValue("Fuel")+1
-		if FmodeNr<1 or FmodeNr>#flightMode then
+		shvars.FmodeNr = getValue("Fuel")+1
+		if shvars.FmodeNr<1 or shvars.FmodeNr>#shvars.flightMode then
 			if shvars.apType == 0 then
-			  FmodeNr=13 -- This is an invalid flight number for Copter when no data available
+			  shvars.FmodeNr=13 -- This is an invalid flight number for Copter when no data available
 			else
-			  FmodeNr=10 -- This is an invalid flight number for Plane when no data available
+			  shvars.FmodeNr=10 -- This is an invalid flight number for Plane when no data available
 			end
 		end
-		if last_flight_mode~=flightMode[FmodeNr] then
+		if last_flight_mode~=shvars.flightMode[shvars.FmodeNr] then
       if last_flight_mode == "init" then
-        last_flight_mode=flightMode[FmodeNr]
+        last_flight_mode=shvars.flightMode[shvars.FmodeNr]
       else
-			  playFile("/SOUNDS/en/TELEM/AVFM"..(FmodeNr-1)..WavSfx..".wav")
-        last_flight_mode=flightMode[FmodeNr]
+			  playFile("/SOUNDS/en/TELEM/AVFM"..(shvars.FmodeNr-1)..WavSfx..".wav")
+        last_flight_mode=shvars.flightMode[shvars.FmodeNr]
       end
 		end
 	end
@@ -199,9 +184,9 @@
 --Init
 ------------------------------------------------
 local function init()
-  loadfile("/SCRIPTS/TELEMETRY/LIBRARY/maininit.lua")(shvars, remfuncs)
-  remfuncs.runInit()
-  clearTable(remfuncs)
+  local init_func = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/maininit.lib")(shvars)
+  init_func()
+  init_func = nil
   initRun = true
 end
 
@@ -220,23 +205,23 @@ end
 --Main
 ------------------------------------------------
 	local function run(event)
-		if event == EVT_MENU_BREAK then
+    --local run_func
+    if event == EVT_MENU_BREAK then
       req_mainscr = not req_mainscr
     end
     if req_mainscr then
       if scr_loaded ~= "mainrun" then
-        clearTable(remfuncs)
-        loadfile("/SCRIPTS/TELEMETRY/LIBRARY/mainrun.lua")(shvars, remfuncs)
+        run_func = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/mainrun.lib")(shvars)
         scr_loaded = "mainrun"
       end
-      remfuncs.runMain(flightMode[FmodeNr], apmArmed)
+      run_func()
     else
       if scr_loaded ~= "confrun" then
-        clearTable(remfuncs)
-        loadfile("/SCRIPTS/TELEMETRY/LIBRARY/confrun.lua")(shvars, remfuncs)
+        run_func = loadfile("/SCRIPTS/TELEMETRY/LIBRARY/confrun.lib")(shvars)
         scr_loaded = "confrun"
       end
-      remfuncs.runConf(event)
+      shvars.event = event
+      run_func()
     end
   end
 
