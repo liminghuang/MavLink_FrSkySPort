@@ -94,8 +94,12 @@
 		event = shvars.event
     lcd.clear()
     -- draw from the bottom up so we don't overwrite the combo box if open
-    local xCoord = 4
-    local yCoord = 50
+		local xCoord = 50
+		local yCoord = 56
+		lcd.drawText(xCoord, yCoord, "(Press MENU to return)", SMLSIZE)
+
+		local xCoord = 4
+    local yCoord = 46
     lcd.drawText(xCoord, yCoord, "Bat calib offset :", SMLSIZE)
 
     xCoord = lcd.getLastPos() + 4
@@ -117,7 +121,7 @@
     lcd.drawText(xCoord + 6, yCoord - 10, "Wh", SMLSIZE)
 
     lcd.drawFilledRectangle(0,0,212,10)
-    lcd.drawText(1, 1, "Telemetry Script Configuration",INVERS)
+    lcd.drawText(26, 1, "Telemetry Script Configuration",INVERS)
 
     xCoord = 14
     yCoord = 22
