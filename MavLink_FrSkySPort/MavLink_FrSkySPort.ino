@@ -136,9 +136,9 @@
  */
 #define debugSerial         Serial
 #define debugSerialBaud     57600
-#define _MavLinkSerial      Serial2
+#define _MavLinkSerial      Serial3
 #define _MavLinkSerialBaud  57600   // set to 57600 if Teensy connected to Pixhawk directly
-#define lcdSerial           Serial3
+#define lcdSerial           Serial2
 #define lcdSerialBaud       115200
 #define START               1
 #define MSG_RATE            10      // Hertz
@@ -163,8 +163,8 @@
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-//#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
-#define USE_LCD_TEXT                                    //Enable external LCD
+#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
+//#define USE_LCD_TEXT                                    //Enable external LCD
 #define USE_MAV_RSSI                                    // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
 #define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC - comment out if not required
 #define AUTO_MAV_STREAM_CFG                             // Enable auto Mavlink SRn_ configuration - comment out for manual stream rate configuration
