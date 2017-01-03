@@ -60,6 +60,9 @@
   local req_mainscr = true
   local scr_loaded = ""
 
+--Empty run_func will be populated later in run() function
+  local run_func = function() end
+
 --Load flight modes
   local function loadFModTab()
     if shvars.apType ~= apTypeOrig then
@@ -205,7 +208,6 @@ end
 --Main
 ------------------------------------------------
 	local function run(event)
-    --local run_func
     if event == EVT_MENU_BREAK then
       req_mainscr = not req_mainscr
     end
