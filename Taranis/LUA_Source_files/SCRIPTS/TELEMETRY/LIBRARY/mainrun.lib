@@ -119,12 +119,12 @@ end
 -----------------------------
 --Main run functions section
 -----------------------------
-  local function toppanel()
+  local function toppanel(fMode, apmArmed)
 		lcd.drawFilledRectangle(0, 0, scrW, 9, 0)
-		if shvars.apmArmed==1 then
-			lcd.drawText(1, 0, shvars.flightMode[shvars.FmodeNr], INVERS)
+		if apmArmed==1 then
+			lcd.drawText(1, 0, fMode, INVERS)
 		else
-			lcd.drawText(1, 0, shvars.flightMode[shvars.FmodeNr], INVERS+BLINK)
+			lcd.drawText(1, 0, fMode, INVERS+BLINK)
 		end
 		lcd.drawText(92, 0, "TxBat:", INVERS)
 		lcd.drawNumber(lcd.getLastPos()+2, 0, getValue(189)*10,0+PREC1+INVERS+LEFT)
@@ -340,10 +340,10 @@ end
 	end
 
 
-return function()
+return function(fMode, apmArmed)
   lcd.clear()
   setUnits()
-  toppanel()
+  toppanel(fMode, apmArmed)
   powerpanel()
   htsapanel()
   gpspanel()

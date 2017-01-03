@@ -23,9 +23,6 @@
 
   -- Initalise shared variables
   local function initShVars()
-    shvars.event = nil
-    shvars.apmArmed = 0
-    shvars.FmodeNr = nil
     shvars.flightMode = {}
     shvars.prearmheading = 0
     shvars.watthours = 0

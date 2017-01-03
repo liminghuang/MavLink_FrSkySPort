@@ -90,8 +90,7 @@
   end
 
 
-	return function()
-		event = shvars.event
+	return function(event)
     lcd.clear()
     -- draw from the bottom up so we don't overwrite the combo box if open
 		local xCoord = 50
