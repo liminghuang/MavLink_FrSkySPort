@@ -141,7 +141,8 @@
 #define lcdSerial           Serial2
 #define lcdSerialBaud       115200
 #define START               1
-#define MSG_RATE            10      // Hertz
+#define MSG_RATE            5       // Hertz
+#define MSG_RATE_POS        2       // Hertz
 #define AP_SYSID            1       // autopilot system id
 #define AP_CMPID            1       // autopilot component id
 #define MY_SYSID            123     // teensy system id
@@ -154,7 +155,7 @@
 
 /*
  * *******************************************************
- * *** Enable Addons:                                  ***
+ * *** Enable Addons/Options:                          ***
  * *******************************************************
  */
 //#define USE_FCS_SENSOR_INSTEAD_OF_APM_DATA              // Enable if you use a FrSky FCS Sensor.
@@ -163,9 +164,9 @@
 //#define USE_AP_VOLTAGE_BATTERY_FROM_SINGLE_CELL_MONITOR // Use this only with enabled USE_SINGLE_CELL_MONITOR
 //#define USE_RC_CHANNELS                                 // Use of RC_CHANNELS Informations ( RAW Input Valus of FC ) - enable if you use TEENSY_LED_SUPPORT.
 //#define USE_TEENSY_LED_SUPPORT                          // Enable LED-Controller functionality
-#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly), will enable Mav RSSI on A3
-//#define USE_LCD_TEXT                                    //Enable external LCD
+#define POLLING_ENABLED                                 // Enable Sensor Polling - for use with Ultimate LRS (where Teensy connected to Taranis S.Port input directly).
 #define USE_MAV_RSSI                                    // Enable Mavlink RSSI on A3 (A4 will be 0)- in place of pitch/roll - required for Ultimate LRS
+//#define USE_LCD_TEXT                                    //Enable external LCD
 #define SEND_STATUS_TEXT_MESSAGE                        // Enable sending Status Text Messages to RC - comment out if not required
 #define AUTO_MAV_STREAM_CFG                             // Enable auto Mavlink SRn_ configuration - comment out for manual stream rate configuration
 /*
