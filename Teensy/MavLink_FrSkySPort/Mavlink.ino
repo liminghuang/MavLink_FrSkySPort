@@ -119,18 +119,21 @@ void Mavlink_config_connection() {
   len = mavlink_msg_to_send_buffer(buf, &msg);
   _MavLinkSerial.write(buf,len);
   delay(10);
+
   mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_RAW_SENSORS, MSG_RATE, START);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   _MavLinkSerial.write(buf,len);
+  delay(10);
+
   #if defined(USE_RC_CHANNELS) || defined(USE_MAV_RSSI)
     delay(10);
     mavlink_msg_request_data_stream_pack(mavlink_system.sysid,mavlink_system.compid,&msg,AP_SYSID,AP_CMPID,MAV_DATA_STREAM_RC_CHANNELS, MSG_RATE, START);
     len = mavlink_msg_to_send_buffer(buf, &msg);
     _MavLinkSerial.write(buf,len);
   #endif
+
   digitalWrite(led,LOW);
   send_mavlink_connection_config++;
-
 }
 
 /*
@@ -505,7 +508,7 @@ void _MavLink_receive() {
             debugSerial.print(ap_climb_rate);
             debugSerial.println();
           #endif
-          break;
+        break;
         /*
          * *****************************************************
          * *** MAVLINK Message #253 - STATUSTEXT             ***
@@ -538,9 +541,9 @@ void _MavLink_receive() {
             debugSerial.print(statustext.text);
             debugSerial.println();
           #endif
-          break;
+        break;
         default:
-          break;
+        break;
       }
     } else if (GB_SYSID == msg.sysid && GB_CMPID == msg.compid) // only proceed with gimbal messages
     {
