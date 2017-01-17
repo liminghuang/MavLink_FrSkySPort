@@ -1,9 +1,8 @@
 #MAVLink to FrSky S.Port Protocol Converter - v2
 
 Main telemetry screen (main.lua):
-![Main Screen](https://raw.githubusercontent.com/Clooney82/MavLink_FrSkySPort/s-c-l-v-rc-opentx2.1/images/v2telem-main.jpg)
-
+<p align=center><img src ="https://raw.githubusercontent.com/athertop/MavLink_FrSkySPort/Mav_Sport2.1-2.2-master/images/v2telem-main.jpg" /></p>
 Config screen (press MENU to display this screen):
-![Main Screen](https://raw.githubusercontent.com/Clooney82/MavLink_FrSkySPort/s-c-l-v-rc-opentx2.1/images/v2telem-main-cfg.jpg)
+<p align=center><img src ="https://raw.githubusercontent.com/athertop/MavLink_FrSkySPort/Mav_Sport2.1-2.2-master/images/v2telem-main-cfg.jpg" /></p>
 
-##For more Informations have a look at our [Wiki](../../wiki)
+##For more Information please take a look at our [wiki](../../wiki)
