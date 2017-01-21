@@ -545,6 +545,12 @@ void _MavLink_receive() {
         default:
         break;
       }
+
+      //send lcd_bf to lcd
+      #ifdef USE_LCD_TEXT
+        _Mavlink_lcd_show();
+      #endif
+      
     } else if (GB_SYSID == msg.sysid && GB_CMPID == msg.compid) // only proceed with gimbal messages
     {
       /*

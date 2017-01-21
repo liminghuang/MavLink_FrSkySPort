@@ -62,6 +62,23 @@
   local req_mainscr = true
   local scr_loaded = ""
 
+  --liming add
+	local time_turbo = 0
+	local voice_time = 0
+	local old_voice_time = 0
+	local take_turn = 1 -- 1:battery 2:height 3:speed 4:GPS
+	local v_bat = 0
+	local Va = 0
+	local Vb = 0
+	local gps_speed = 0
+	local Gheight = 0
+  local telem_t1 = 0
+
+	local VoiceAction = function(Number)
+		playFile("/SOUNDS/tw/" .. tostring(Number) .. ".wav")
+	end
+
+
 --Empty run_func will be populated later in run() function
   local run_func = function() end
 
@@ -185,6 +202,138 @@
 		end
 	end
 
+  -- voice task
+  	local function play_number(x)
+  		if tonumber(x)>1000 then
+  			play_number(tonumber(string.format("%u",x/1000)))
+  			VoiceAction("thousand")
+  			play_number(tonumber(string.format("%u",x%1000)))
+  		elseif (x%1000)==0 then
+  			VoiceAction(x/1000)
+  			VoiceAction("hundred")
+  		elseif x>100 then
+  			play_number(tonumber(string.format("%u",x/100)))
+  			VoiceAction("hundred")
+  			play_number(tonumber(string.format("%u",x%100)))
+  		elseif (x%100)==0 then
+  			VoiceAction(x/100)
+  			VoiceAction("hundred")
+  		elseif x <10 then
+  			VoiceAction(x)
+  		elseif (x%10)==0 then
+  			VoiceAction(x)
+  		elseif x >90 then
+  			VoiceAction(90)
+  			VoiceAction(x%10)
+  		elseif x >80 then
+  			VoiceAction(80)
+  			VoiceAction(x%10)
+  		elseif x >70 then
+  			VoiceAction(70)
+  			VoiceAction(x%10)
+  		elseif x >60 then
+  			VoiceAction(60)
+  			VoiceAction(x%10)
+  		elseif x >50 then
+  			VoiceAction(50)
+  			VoiceAction(x%10)
+  		elseif x >40 then
+  			VoiceAction(40)
+  			VoiceAction(x%10)
+  		elseif x >30 then
+  			VoiceAction(30)
+  			VoiceAction(x%10)
+  		elseif x >20 then
+  			VoiceAction(20)
+  			VoiceAction(x%10)
+  		elseif x >10 then
+  			VoiceAction(10)
+  			VoiceAction(x%10)
+  		end
+  	end
+
+  	local function speed_voice()
+  		gps_speed = tonumber(string.format("%u", getValue("GSpd")*3.6))
+  		if gps_speed>1 then
+  			VoiceAction("speed")
+  			if gps_speed<10 then
+  				VoiceAction(gps_speed)
+  			elseif gps_speed >=10 then
+  				play_number(gps_speed)
+  			end
+  		else
+  			VoiceAction("speed")
+  			VoiceAction(0)
+  		end
+  	end
+
+  	local function gps_voice()
+      telem_t1 = getValue("Tmp1")
+  		telem_sats = 0
+  		telem_sats = (telem_t1 - (telem_t1%10))/10
+  		if telem_sats>0 then
+  			VoiceAction("gps")
+  			if telem_sats<10 then
+  				VoiceAction(telem_sats)
+  			elseif telem_sats >=10 then
+  				play_number(telem_sats)
+  			end
+  		else
+  			VoiceAction("gps")
+  			VoiceAction(0)
+  		end
+  	end
+
+  	local function height_voice() --Alt
+  		if(getValue("Alt")>0) then
+  			VoiceAction("height")
+  			Gheight = tonumber(string.format("%u", getValue("Alt")))
+  			play_number(Gheight)
+  			VoiceAction("meter")
+  		end
+  	end
+
+  	local function battery_voice()
+    		if(getValue("VFAS")>0) then
+    			v_bat = string.format("%0.1f", getValue("VFAS"))
+  	  		VoiceAction("battery")
+  	  		Va,Vb = math.modf(v_bat)
+  	  		play_number(Va)
+  	  		if (Vb > 0) then
+  	  			VoiceAction("dot")
+  	  			VoiceAction((v_bat*10)%10)
+  	  		end
+  	 	end
+  	end
+
+  	local function voice_task()
+  		if getValue("sd") < 1024 then --switch D control voice on/off
+  			return 0
+  		end
+  		voice_time = voice_time + (getTime() - old_voice_time) + time_turbo
+  	  	if voice_time >=850 then
+  			if take_turn==1 then
+  				time_turbo = 1
+  				battery_voice()
+  				take_turn = take_turn+1
+  			elseif take_turn==2 then
+  				time_turbo = 3
+  				height_voice()
+  				take_turn = take_turn+1
+  			elseif take_turn==3 then
+  				time_turbo = 3
+  				gps_voice()
+  				take_turn = take_turn+1
+  			elseif take_turn==4 then
+  				time_turbo = 3
+  				speed_voice()
+  				take_turn = 1
+  			end
+  			voice_time = 0
+  		end
+  		old_voice_time = getTime()
+  	end
+
 ------------------------------------------------
 --Init
 ------------------------------------------------
@@ -204,6 +353,7 @@ end
 		Flight_modes()
 		calcWattHs()
 		playMaxWhReached()
+    voice_task()
 	end
 
 ------------------------------------------------
